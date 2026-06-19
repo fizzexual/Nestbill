@@ -7,6 +7,7 @@ import { COMPONENTS, COMPONENT_LIST, isContainer } from './components.jsx';
 import { BREAKPOINTS } from './cssGen.js';
 import Canvas from './Canvas.jsx';
 import StylePanel from './StylePanel.jsx';
+import Navigator from './Navigator.jsx';
 
 const BP_ICONS = { base: Monitor, tablet: Tablet, mobile: Smartphone };
 
@@ -100,23 +101,23 @@ export default function BuilderApp() {
 
       <div className="flex min-h-0 flex-1">
         {!previewMode && (
-          <aside className="w-52 shrink-0 border-r border-neutral-200 bg-white p-2">
-            <div className="px-1 pb-2 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">Add</div>
-            <div className="grid grid-cols-2 gap-1.5">
-              {COMPONENT_LIST.map((c) => {
-                const Icon = COMPONENTS[c].icon;
-                return (
-                  <button key={c} onClick={() => addComponent(c)}
-                    className="flex flex-col items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 py-2.5 text-[11px] text-neutral-600 hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700">
-                    <Icon size={16} />
-                    {COMPONENTS[c].label}
-                  </button>
-                );
-              })}
+          <aside className="flex w-56 shrink-0 flex-col border-r border-neutral-200 bg-white">
+            <div className="shrink-0 border-b border-neutral-100 p-2">
+              <div className="px-1 pb-2 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">Insert</div>
+              <div className="grid grid-cols-2 gap-1.5">
+                {COMPONENT_LIST.map((c) => {
+                  const Icon = COMPONENTS[c].icon;
+                  return (
+                    <button key={c} onClick={() => addComponent(c)}
+                      className="flex flex-col items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 py-2 text-[11px] text-neutral-600 hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700">
+                      <Icon size={15} />
+                      {COMPONENTS[c].label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <p className="mt-3 px-1 text-[10px] leading-relaxed text-neutral-400">
-              Adds inside the selected box, or after the selected element.
-            </p>
+            <Navigator />
           </aside>
         )}
 
