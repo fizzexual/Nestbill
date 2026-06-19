@@ -125,15 +125,23 @@ export default function Canvas() {
   const fr = iframe?.getBoundingClientRect();
 
   return (
-    <div className="relative flex-1 overflow-auto bg-neutral-200/70">
-      <div className="flex min-h-full justify-center p-6">
+    <div className="relative flex-1 overflow-auto bg-neutral-100 [background-image:radial-gradient(#d6d8de_1px,transparent_1px)] [background-size:18px_18px]">
+      <div className="flex min-h-full justify-center p-8">
         <div
-          className="shrink-0 bg-white shadow-[0_1px_3px_rgba(0,0,0,.1),0_12px_40px_rgba(0,0,0,.08)]"
+          className="flex shrink-0 flex-col overflow-hidden rounded-xl bg-white shadow-[0_2px_8px_rgba(0,0,0,.06),0_20px_48px_rgba(0,0,0,.12)] ring-1 ring-black/5"
           style={{ width }}
           onClick={() => useUI.getState().select(null)}
         >
+          <div className="flex h-9 shrink-0 items-center gap-1.5 border-b border-neutral-100 bg-neutral-50 px-3">
+            <span className="h-2.5 w-2.5 rounded-full bg-red-400/60" />
+            <span className="h-2.5 w-2.5 rounded-full bg-amber-400/60" />
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/60" />
+            <div className="mx-auto flex items-center gap-1.5 rounded-md bg-white px-3 py-0.5 text-[10px] text-neutral-400 ring-1 ring-neutral-200">
+              {page?.name || 'Page'} · {width}px
+            </div>
+          </div>
           {/* eslint-disable-next-line jsx-a11y/iframe-has-title */}
-          <iframe ref={iframeRef} title="Canvas" className="block h-full w-full border-0" style={{ minHeight: 'calc(100vh - 96px)' }} onClick={(e) => e.stopPropagation()} />
+          <iframe ref={iframeRef} title="Canvas" className="block w-full flex-1 border-0" style={{ minHeight: 'calc(100vh - 150px)' }} onClick={(e) => e.stopPropagation()} />
         </div>
       </div>
       {mountNode && project && page && createPortal(<InstanceRender id={page.rootId} instances={project.instances} />, mountNode)}
