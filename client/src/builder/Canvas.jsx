@@ -78,18 +78,81 @@ export default function Canvas() {
     if (editEl) editEl.textContent = previewMode ? '' : EDIT_HELPERS;
   }, [previewMode, mountNode]);
 
-  // select / hover
+  // select + drag-to-move (free positioning)
   useEffect(() => {
     const doc = iframeRef.current?.contentDocument;
     if (!doc || previewMode) return undefined;
-    const idOf = (e) => e.target.closest?.('[data-ws-id]')?.getAttribute('data-ws-id') || null;
-    const onClick = (e) => { e.preventDefault(); e.stopPropagation(); useUI.getState().select(idOf(e)); };
-    const onMove = (e) => useUI.getState().hover(idOf(e));
+    const idOf = (el) => el?.closest?.('[data-ws-id]')?.getAttribute('data-ws-id') || null;
+    const rootId = () => useBuilder.getState().project.pages[0].rootId;
+    const nextZ = () => {
+      let max = 0;
+      for (const s of Object.values(useBuilder.getState().project.styles)) {
+        const z = parseInt(s.base?.['z-index'], 10);
+        if (!Number.isNaN(z)) max = Math.max(max, z);
+      }
+      return max + 1;
+    };
+    let drag = null;
+
+    const onDown = (e) => {
+      const el = e.target.closest?.('[data-ws-id]');
+      const id = idOf(el);
+      if (!id) { useUI.getState().select(null); return; }
+      useUI.getState().select(id);
+      if (id === rootId()) return;
+      const er = el.getBoundingClientRect();
+      const rr = doc.querySelector(`[data-ws-id="${rootId()}"]`).getBoundingClientRect();
+      drag = { id, el, sx: e.clientX, sy: e.clientY, left: Math.round(er.left - rr.left), top: Math.round(er.top - rr.top), w: Math.round(er.width), h: Math.round(er.height), moved: false, z: 1 };
+      try { el.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+      e.preventDefault();
+    };
+    const onMove = (e) => {
+      if (!drag) { useUI.getState().hover(idOf(e.target.closest?.('[data-ws-id]'))); return; }
+      const dx = e.clientX - drag.sx;
+      const dy = e.clientY - drag.sy;
+      if (!drag.moved && Math.hypot(dx, dy) < 4) return;
+      if (!drag.moved) { drag.moved = true; drag.z = nextZ(); }
+      const s = drag.el.style;
+      s.position = 'absolute';
+      s.left = `${drag.left + dx}px`;
+      s.top = `${drag.top + dy}px`;
+      s.width = `${drag.w}px`;
+      s.height = `${drag.h}px`;
+      s.margin = '0px';
+      s.zIndex = String(drag.z);
+    };
+    const onUp = () => {
+      if (drag && drag.moved) {
+        const { id, el } = drag;
+        const bp = useUI.getState().breakpoint;
+        const rid = rootId();
+        if ((useBuilder.getState().project.styles[rid]?.base || {}).position !== 'relative') {
+          useBuilder.getState().setStyle(rid, 'base', 'position', 'relative');
+        }
+        useBuilder.getState().setStyles(id, bp, {
+          position: 'absolute', left: el.style.left, top: el.style.top, width: el.style.width, height: el.style.height, margin: '0px', 'z-index': el.style.zIndex,
+        });
+        requestAnimationFrame(() => {
+          ['position', 'left', 'top', 'width', 'height', 'margin', 'zIndex'].forEach((p) => { el.style[p] = ''; });
+        });
+      }
+      drag = null;
+    };
+    const onClick = (e) => e.preventDefault(); // block link/button navigation in edit mode
     const onLeave = () => useUI.getState().hover(null);
+
+    doc.addEventListener('pointerdown', onDown);
+    doc.addEventListener('pointermove', onMove);
+    doc.addEventListener('pointerup', onUp);
     doc.addEventListener('click', onClick, true);
-    doc.addEventListener('mousemove', onMove);
     doc.addEventListener('mouseleave', onLeave);
-    return () => { doc.removeEventListener('click', onClick, true); doc.removeEventListener('mousemove', onMove); doc.removeEventListener('mouseleave', onLeave); };
+    return () => {
+      doc.removeEventListener('pointerdown', onDown);
+      doc.removeEventListener('pointermove', onMove);
+      doc.removeEventListener('pointerup', onUp);
+      doc.removeEventListener('click', onClick, true);
+      doc.removeEventListener('mouseleave', onLeave);
+    };
   }, [mountNode, previewMode]);
 
   // drag-to-insert

@@ -120,6 +120,23 @@ export const useBuilder = create(
         });
       },
 
+      /** Set/clear several CSS declarations in one undo step (used by move/resize). */
+      setStyles(id, breakpoint, decls) {
+        set((s) => {
+          if (!s.project) return s;
+          const styles = { ...s.project.styles };
+          const cur = { ...(styles[id] || {}) };
+          const bp = { ...(cur[breakpoint] || {}) };
+          for (const [k, val] of Object.entries(decls)) {
+            if (val === '' || val == null) delete bp[k];
+            else bp[k] = val;
+          }
+          cur[breakpoint] = bp;
+          styles[id] = cur;
+          return { project: { ...s.project, styles } };
+        });
+      },
+
       /** Set or clear one CSS declaration for an instance at a breakpoint. */
       setStyle(id, breakpoint, prop, value) {
         set((s) => {

@@ -45,10 +45,17 @@ function ContentSection({ inst }) {
       </Section>
     );
   }
-  if (c === 'Heading' || c === 'Text' || c === 'Button') {
+  if (c === 'Heading' || c === 'Text' || c === 'Button' || c === 'Quote') {
     return (
       <Section title="Content">
         <TextAreaField value={inst.props.text} onChange={(v) => setProp('text', v)} placeholder="Text…" />
+      </Section>
+    );
+  }
+  if (c === 'Input' || c === 'Textarea') {
+    return (
+      <Section title="Content">
+        <Field label="Placeholder"><TextField value={inst.props.placeholder} onChange={(v) => setProp('placeholder', v)} /></Field>
       </Section>
     );
   }

@@ -7,12 +7,18 @@ import {
   Link as LinkIcon,
   LayoutPanelTop,
   Minus,
+  Columns2,
+  CreditCard,
+  FormInput,
+  StretchVertical,
+  Quote as QuoteIcon,
+  TextCursorInput,
 } from 'lucide-react';
 
 /**
  * Component registry for the flow builder. Each component renders a real HTML
- * tag with real CSS (no absolute positioning). `defaultStyle` keys are real
- * CSS properties (kebab-case) with units.
+ * tag with real CSS (kebab-case keys, with units). Elements can also be set to
+ * position:absolute and freely moved/resized on the canvas.
  */
 export const COMPONENTS = {
   Body: {
@@ -21,6 +27,7 @@ export const COMPONENTS = {
     container: true,
     icon: LayoutPanelTop,
     defaultStyle: {
+      position: 'relative',
       display: 'flex',
       'flex-direction': 'column',
       'min-height': '100%',
@@ -50,6 +57,31 @@ export const COMPONENTS = {
     icon: Square,
     defaultStyle: { display: 'block', 'padding-top': '16px', 'padding-bottom': '16px', 'padding-left': '16px', 'padding-right': '16px' },
   },
+  Columns: {
+    label: 'Columns',
+    tag: 'div',
+    container: true,
+    icon: Columns2,
+    defaultStyle: { display: 'flex', 'flex-direction': 'row', gap: '16px', 'align-items': 'stretch' },
+  },
+  Card: {
+    label: 'Card',
+    tag: 'div',
+    container: true,
+    icon: CreditCard,
+    defaultStyle: {
+      display: 'flex',
+      'flex-direction': 'column',
+      gap: '10px',
+      'padding-top': '20px',
+      'padding-bottom': '20px',
+      'padding-left': '20px',
+      'padding-right': '20px',
+      'background-color': '#ffffff',
+      'border-radius': '14px',
+      'box-shadow': '0 1px 2px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.08)',
+    },
+  },
   Heading: {
     label: 'Heading',
     tag: 'h2',
@@ -65,6 +97,24 @@ export const COMPONENTS = {
     icon: Type,
     defaultProps: { text: 'Some paragraph text.' },
     defaultStyle: { 'font-size': '16px', 'line-height': '1.5', 'margin-top': '0px', 'margin-bottom': '0px', color: '#374151' },
+  },
+  Quote: {
+    label: 'Quote',
+    tag: 'blockquote',
+    container: false,
+    icon: QuoteIcon,
+    defaultProps: { text: 'A memorable quote goes here.' },
+    defaultStyle: {
+      'margin-top': '0px',
+      'margin-bottom': '0px',
+      'padding-left': '16px',
+      'border-left-width': '3px',
+      'border-left-style': 'solid',
+      'border-color': '#4f46e5',
+      'font-style': 'italic',
+      'font-size': '18px',
+      color: '#374151',
+    },
   },
   Link: {
     label: 'Link',
@@ -102,6 +152,45 @@ export const COMPONENTS = {
     defaultProps: { src: '', alt: '' },
     defaultStyle: { 'max-width': '100%', display: 'block', height: 'auto' },
   },
+  Input: {
+    label: 'Input',
+    tag: 'input',
+    container: false,
+    icon: FormInput,
+    defaultProps: { placeholder: 'Enter text…' },
+    defaultStyle: {
+      'padding-top': '10px',
+      'padding-bottom': '10px',
+      'padding-left': '12px',
+      'padding-right': '12px',
+      'border-width': '1px',
+      'border-style': 'solid',
+      'border-color': '#d1d5db',
+      'border-radius': '8px',
+      'font-size': '15px',
+      width: '260px',
+    },
+  },
+  Textarea: {
+    label: 'Textarea',
+    tag: 'textarea',
+    container: false,
+    icon: TextCursorInput,
+    defaultProps: { placeholder: 'Your message…' },
+    defaultStyle: {
+      'padding-top': '10px',
+      'padding-bottom': '10px',
+      'padding-left': '12px',
+      'padding-right': '12px',
+      'border-width': '1px',
+      'border-style': 'solid',
+      'border-color': '#d1d5db',
+      'border-radius': '8px',
+      'font-size': '15px',
+      width: '300px',
+      'min-height': '96px',
+    },
+  },
   Divider: {
     label: 'Divider',
     tag: 'hr',
@@ -109,10 +198,18 @@ export const COMPONENTS = {
     icon: Minus,
     defaultStyle: { 'border-top-width': '1px', 'border-top-style': 'solid', 'border-color': '#e5e7eb', width: '100%' },
   },
+  Spacer: {
+    label: 'Spacer',
+    tag: 'div',
+    container: false,
+    icon: StretchVertical,
+    defaultStyle: { height: '48px' },
+  },
 };
 
 /** Components offered in the insert panel (Body is implicit). */
-export const COMPONENT_LIST = ['Section', 'Box', 'Heading', 'Text', 'Link', 'Button', 'Image', 'Divider'];
+export const COMPONENT_LIST = [
+  'Section', 'Columns', 'Box', 'Card', 'Heading', 'Text', 'Quote', 'Link', 'Button', 'Image', 'Input', 'Textarea', 'Divider', 'Spacer',
+];
 
 export const isContainer = (component) => !!COMPONENTS[component]?.container;
-export const isVoid = (component) => component === 'Image' || component === 'Divider';

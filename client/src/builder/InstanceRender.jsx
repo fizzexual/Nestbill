@@ -13,12 +13,21 @@ export function InstanceRender({ id, instances }) {
   const Tag = def.tag;
   const common = { 'data-ws-id': id };
 
-  if (inst.component === 'Image') {
-    return <img {...common} src={inst.props.src || undefined} alt={inst.props.alt || ''} />;
+  switch (inst.component) {
+    case 'Image':
+      return <img {...common} src={inst.props.src || undefined} alt={inst.props.alt || ''} />;
+    case 'Divider':
+      return <hr {...common} />;
+    case 'Spacer':
+      return <div {...common} />;
+    case 'Input':
+      return <input {...common} placeholder={inst.props.placeholder || ''} readOnly />;
+    case 'Textarea':
+      return <textarea {...common} placeholder={inst.props.placeholder || ''} readOnly />;
+    default:
+      break;
   }
-  if (inst.component === 'Divider') {
-    return <hr {...common} />;
-  }
+
   if (def.container) {
     return (
       <Tag {...common}>
@@ -29,7 +38,7 @@ export function InstanceRender({ id, instances }) {
     );
   }
 
-  // text-bearing leaf (Heading, Text, Link, Button)
+  // text-bearing leaf (Heading, Text, Quote, Link, Button)
   const extra = {};
   if (inst.component === 'Link') extra.href = inst.props.href || undefined;
   if (inst.component === 'Button') extra.type = 'button';
