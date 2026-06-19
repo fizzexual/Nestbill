@@ -9,6 +9,9 @@ import { BREAKPOINTS } from './cssGen.js';
 import Canvas from './Canvas.jsx';
 import StylePanel from './StylePanel.jsx';
 import Navigator from './Navigator.jsx';
+import ProjectBar from './ProjectBar.jsx';
+import { useAutosave } from './useAutosave.js';
+import { getLastId, loadLocal, getServerId, isValidProject } from './persist.js';
 
 const BP_ICONS = { base: Monitor, tablet: Tablet, mobile: Smartphone };
 
@@ -40,9 +43,18 @@ export default function BuilderApp() {
   const previewMode = useUI((s) => s.previewMode);
   const past = useStore(useBuilder.temporal, (s) => s.pastStates.length);
   const future = useStore(useBuilder.temporal, (s) => s.futureStates.length);
+  useAutosave();
 
   useEffect(() => {
-    if (!project) useBuilder.getState().loadProject(defaultProject());
+    if (project) return;
+    const lastId = getLastId();
+    const restored = lastId ? loadLocal(lastId) : null;
+    if (restored && isValidProject(restored)) {
+      useBuilder.getState().loadProject(restored);
+      useUI.getState().setServerId(getServerId(lastId));
+    } else {
+      useBuilder.getState().loadProject(defaultProject());
+    }
   }, [project]);
 
   // Keyboard: delete / undo / redo
@@ -71,10 +83,10 @@ export default function BuilderApp() {
   return (
     <div className="flex h-full flex-col bg-neutral-100 text-neutral-900">
       <header className="flex h-12 shrink-0 items-center gap-3 border-b border-neutral-200 bg-white px-3">
-        <div className="flex items-center gap-2 pr-2">
+        <div className="flex shrink-0 items-center gap-2 pr-1">
           <div className="h-5 w-5 rounded bg-gradient-to-br from-indigo-500 to-fuchsia-500" />
-          <span className="font-semibold tracking-tight">Prism</span>
         </div>
+        <ProjectBar />
         <div className="flex items-center gap-0.5">
           <button disabled={!past} onClick={() => temporal.undo()} className="grid h-8 w-8 place-items-center rounded-md text-neutral-600 hover:bg-neutral-100 disabled:opacity-30" title="Undo">
             <Undo2 size={16} />

@@ -145,8 +145,12 @@ export const useUI = create((set) => ({
   hoveredId: null,
   breakpoint: 'base',
   previewMode: false,
+  serverId: null,
+  saveStatus: 'idle', // 'idle' | 'saving' | 'cloud' | 'local'
   select: (id) => set({ selectedId: id }),
   hover: (id) => set({ hoveredId: id }),
   setBreakpoint: (breakpoint) => set({ breakpoint }),
   setPreview: (previewMode) => set({ previewMode }),
+  setServerId: (serverId) => set({ serverId }),
+  setSaveStatus: (saveStatus) => set({ saveStatus }),
 }));
