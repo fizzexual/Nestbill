@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
 import { useStore } from 'zustand';
-import { Undo2, Redo2, Monitor, Tablet, Smartphone, Eye, Trash2, Copy } from 'lucide-react';
+import { Undo2, Redo2, Monitor, Tablet, Smartphone, Eye } from 'lucide-react';
 import { useBuilder, useUI } from './store.js';
 import { defaultProject, findParentId } from './model.js';
 import { COMPONENTS, COMPONENT_LIST, isContainer } from './components.jsx';
 import { BREAKPOINTS } from './cssGen.js';
 import Canvas from './Canvas.jsx';
+import StylePanel from './StylePanel.jsx';
 
 const BP_ICONS = { base: Monitor, tablet: Tablet, mobile: Smartphone };
 
@@ -35,7 +36,6 @@ export default function BuilderApp() {
   const project = useBuilder((s) => s.project);
   const breakpoint = useUI((s) => s.breakpoint);
   const previewMode = useUI((s) => s.previewMode);
-  const selectedId = useUI((s) => s.selectedId);
   const past = useStore(useBuilder.temporal, (s) => s.pastStates.length);
   const future = useStore(useBuilder.temporal, (s) => s.futureStates.length);
 
@@ -65,7 +65,6 @@ export default function BuilderApp() {
 
   if (!project) return null;
   const temporal = useBuilder.temporal.getState();
-  const selected = selectedId ? project.instances[selectedId] : null;
 
   return (
     <div className="flex h-full flex-col bg-neutral-100 text-neutral-900">
@@ -124,28 +123,8 @@ export default function BuilderApp() {
         <Canvas />
 
         {!previewMode && (
-          <aside className="w-72 shrink-0 border-l border-neutral-200 bg-white p-3 text-sm">
-            {selected ? (
-              <div>
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="font-medium text-neutral-800">{selected.label}</span>
-                  <span className="text-[11px] text-neutral-400">{selected.component}</span>
-                </div>
-                <div className="flex gap-1.5">
-                  <button onClick={() => { const id = useBuilder.getState().duplicate(selectedId); if (id) useUI.getState().select(id); }}
-                    className="flex items-center gap-1 rounded-md border border-neutral-200 px-2 py-1 text-xs text-neutral-600 hover:bg-neutral-50">
-                    <Copy size={12} /> Duplicate
-                  </button>
-                  <button onClick={() => { useBuilder.getState().remove(selectedId); useUI.getState().select(null); }}
-                    className="flex items-center gap-1 rounded-md border border-neutral-200 px-2 py-1 text-xs text-red-600 hover:bg-red-50">
-                    <Trash2 size={12} /> Delete
-                  </button>
-                </div>
-                <p className="mt-3 text-[11px] text-neutral-400">Style controls arrive in the next step.</p>
-              </div>
-            ) : (
-              <p className="text-center text-xs text-neutral-400">Select an element on the canvas.</p>
-            )}
+          <aside className="flex w-72 shrink-0 flex-col border-l border-neutral-200 bg-white">
+            <StylePanel />
           </aside>
         )}
       </div>
