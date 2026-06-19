@@ -14,9 +14,13 @@ const EDIT_HELPERS = `[data-ws-id]:empty{min-height:48px;min-width:48px;outline:
 const DRAG_TYPE = 'text/prism-component';
 
 /** Decide where a dragged component should land. Coords are iframe-viewport relative. */
-function computeDrop(e, doc, instances, rootId) {
+function computeDrop(e, doc, instances, rootId, excludeId) {
   let el = doc.elementFromPoint(e.clientX, e.clientY);
   el = el && el.closest('[data-ws-id]');
+  if (excludeId && el) {
+    const dragged = doc.querySelector(`[data-ws-id="${excludeId}"]`);
+    if (dragged && dragged.contains(el)) el = dragged.parentElement?.closest('[data-ws-id]') || null;
+  }
   if (!el) {
     const r = doc.querySelector(`[data-ws-id="${rootId}"]`)?.getBoundingClientRect();
     return { parentId: rootId, index: instances[rootId].children.length, line: r ? { left: r.left, top: r.bottom - 2, width: r.width } : null };
@@ -104,11 +108,16 @@ export default function Canvas() {
       const id = idOf(el);
       if (!id) { useUI.getState().select(null); return; }
       useUI.getState().select(id);
-      // Only "Free" (absolute) elements can be dragged on the canvas.
-      if (id === rootId() || !isFree(id)) return;
-      const er = el.getBoundingClientRect();
-      const rr = doc.querySelector(`[data-ws-id="${rootId()}"]`).getBoundingClientRect();
-      drag = { id, el, sx: e.clientX, sy: e.clientY, left: Math.round(er.left - rr.left), top: Math.round(er.top - rr.top), moved: false };
+      if (id === rootId()) return;
+      if (isFree(id)) {
+        // Free element: drag to reposition (absolute left/top).
+        const er = el.getBoundingClientRect();
+        const rr = doc.querySelector(`[data-ws-id="${rootId()}"]`).getBoundingClientRect();
+        drag = { type: 'move', id, el, sx: e.clientX, sy: e.clientY, left: Math.round(er.left - rr.left), top: Math.round(er.top - rr.top), moved: false };
+      } else {
+        // Flow element: drag to reorder in the layout.
+        drag = { type: 'reorder', id, el, sx: e.clientX, sy: e.clientY, moved: false, drop: null };
+      }
       try { el.setPointerCapture(e.pointerId); } catch { /* ignore */ }
       e.preventDefault();
     };
@@ -118,14 +127,36 @@ export default function Canvas() {
       const dy = e.clientY - drag.sy;
       if (!drag.moved && Math.hypot(dx, dy) < 4) return;
       drag.moved = true;
-      drag.el.style.left = `${drag.left + dx}px`;
-      drag.el.style.top = `${drag.top + dy}px`;
+      if (drag.type === 'move') {
+        drag.el.style.left = `${drag.left + dx}px`;
+        drag.el.style.top = `${drag.top + dy}px`;
+      } else {
+        drag.el.style.opacity = '0.4';
+        drag.drop = computeDrop(e, doc, useBuilder.getState().project.instances, rootId(), drag.id);
+        setDropLine(drag.drop ? drag.drop.line : null);
+      }
     };
     const onUp = () => {
-      if (drag && drag.moved) {
-        const { id, el } = drag;
-        useBuilder.getState().setStyles(id, useUI.getState().breakpoint, { left: el.style.left, top: el.style.top, 'z-index': String(nextZ()) });
-        requestAnimationFrame(() => { el.style.left = ''; el.style.top = ''; });
+      if (drag) {
+        if (drag.type === 'move' && drag.moved) {
+          const { id, el } = drag;
+          useBuilder.getState().setStyles(id, useUI.getState().breakpoint, { left: el.style.left, top: el.style.top, 'z-index': String(nextZ()) });
+          requestAnimationFrame(() => { el.style.left = ''; el.style.top = ''; });
+        } else if (drag.type === 'reorder') {
+          drag.el.style.opacity = '';
+          const t = drag.drop;
+          if (drag.moved && t) {
+            const instances = useBuilder.getState().project.instances;
+            let index = t.index;
+            const oldParent = findParentId(instances, drag.id);
+            if (t.parentId === oldParent) {
+              const oldIndex = instances[oldParent].children.indexOf(drag.id);
+              if (index > oldIndex) index -= 1;
+            }
+            useBuilder.getState().move(drag.id, t.parentId, index);
+          }
+          setDropLine(null);
+        }
       }
       drag = null;
     };
