@@ -19,15 +19,19 @@ export function declarationsToCss(decls = {}) {
     .join(' ');
 }
 
-/** styles: { [instanceId]: { base?: {...}, tablet?: {...}, mobile?: {...} } } */
-export function generateCss(styles = {}) {
+/**
+ * styles: { [instanceId]: { base?: {...}, tablet?: {...}, mobile?: {...} } }
+ * selector(id) lets callers choose the rule selector (editor uses data-ws-id,
+ * export uses a clean class).
+ */
+export function generateCss(styles = {}, selector = (id) => `[data-ws-id="${id}"]`) {
   const byBp = { base: [], tablet: [], mobile: [] };
   for (const [id, perBp] of Object.entries(styles)) {
     for (const bp of ORDER) {
       const decls = perBp?.[bp];
       if (decls && Object.keys(decls).length) {
         const body = declarationsToCss(decls);
-        if (body) byBp[bp].push(`[data-ws-id="${id}"] { ${body} }`);
+        if (body) byBp[bp].push(`${selector(id)} { ${body} }`);
       }
     }
   }
