@@ -108,8 +108,16 @@ export default function BuilderApp() {
                 {COMPONENT_LIST.map((c) => {
                   const Icon = COMPONENTS[c].icon;
                   return (
-                    <button key={c} onClick={() => addComponent(c)}
-                      className="flex flex-col items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 py-2 text-[11px] text-neutral-600 hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700">
+                    <button
+                      key={c}
+                      onClick={() => addComponent(c)}
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/prism-component', c);
+                        e.dataTransfer.effectAllowed = 'copy';
+                      }}
+                      className="flex cursor-grab flex-col items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 py-2 text-[11px] text-neutral-600 hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700 active:cursor-grabbing"
+                    >
                       <Icon size={15} />
                       {COMPONENTS[c].label}
                     </button>
