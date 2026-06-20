@@ -10,6 +10,7 @@ import Canvas from './Canvas.jsx';
 import StylePanel from './StylePanel.jsx';
 import Navigator from './Navigator.jsx';
 import AssetsPanel from './AssetsPanel.jsx';
+import PagesPanel from './PagesPanel.jsx';
 import ProjectBar from './ProjectBar.jsx';
 import PagesMenu from './PagesMenu.jsx';
 import { useAutosave } from './useAutosave.js';
@@ -127,7 +128,7 @@ export default function BuilderApp() {
         {!previewMode && (
           <aside className="flex w-56 shrink-0 flex-col border-r border-neutral-200 bg-white">
             <div className="flex shrink-0 border-b border-neutral-200">
-              {['add', 'layers', 'assets'].map((t) => (
+              {['add', 'layers', 'pages', 'assets'].map((t) => (
                 <button
                   key={t}
                   onClick={() => setLeftTab(t)}
@@ -179,6 +180,7 @@ export default function BuilderApp() {
               </div>
             )}
             {leftTab === 'layers' && <Navigator />}
+            {leftTab === 'pages' && <PagesPanel />}
             {leftTab === 'assets' && <AssetsPanel />}
           </aside>
         )}
