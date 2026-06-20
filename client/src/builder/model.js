@@ -35,6 +35,21 @@ export function isAncestor(instances, maybeAncestor, id) {
   return collectSubtree(instances, maybeAncestor).includes(id);
 }
 
+/** Serialize a subtree (instances + styles) for copy/paste. */
+export function snapshotSubtree(project, id) {
+  const instances = {};
+  const styles = {};
+  const walk = (i) => {
+    const inst = project.instances[i];
+    if (!inst) return;
+    instances[i] = { ...inst, props: { ...inst.props }, children: [...inst.children] };
+    styles[i] = JSON.parse(JSON.stringify(project.styles[i] || {}));
+    inst.children.forEach(walk);
+  };
+  walk(id);
+  return { rootId: id, instances, styles };
+}
+
 /** A starter project: Body > Section > [Heading, Text, Button]. */
 export function defaultProject(name = 'My Site') {
   const body = createInstance('Body');

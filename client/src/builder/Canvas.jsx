@@ -5,6 +5,7 @@ import { BREAKPOINTS, generateCss } from './cssGen.js';
 import { COMPONENTS } from './components.jsx';
 import { findParentId } from './model.js';
 import { effectiveStyle } from './styleUtils.js';
+import { handleShortcut } from './actions.js';
 import { InstanceRender } from './InstanceRender.jsx';
 import Overlay from './Overlay.jsx';
 
@@ -60,6 +61,7 @@ export default function Canvas() {
   const wsStyleRef = useRef(null);
   const [mountNode, setMountNode] = useState(null);
   const [dropLine, setDropLine] = useState(null);
+  const editingRef = useRef(null);
 
   useEffect(() => {
     const iframe = iframeRef.current;
@@ -104,6 +106,8 @@ export default function Canvas() {
       return pos === 'absolute' || pos === 'fixed';
     };
     const onDown = (e) => {
+      // While editing text inline, let clicks inside the editing element place the caret.
+      if (editingRef.current && editingRef.current.el.contains(e.target)) return;
       const el = e.target.closest?.('[data-ws-id]');
       const id = idOf(el);
       if (!id) { useUI.getState().select(null); return; }
@@ -162,18 +166,32 @@ export default function Canvas() {
     };
     const onClick = (e) => e.preventDefault(); // block link/button navigation in edit mode
     const onLeave = () => useUI.getState().hover(null);
+    const onContextMenu = (e) => {
+      const el = e.target.closest?.('[data-ws-id]');
+      const id = el?.getAttribute('data-ws-id');
+      if (!id) return;
+      e.preventDefault();
+      useUI.getState().select(id);
+      const f = iframeRef.current.getBoundingClientRect();
+      useUI.getState().setMenu({ x: f.left + e.clientX, y: f.top + e.clientY, id });
+    };
+    const onKey = (e) => { if (!editingRef.current) handleShortcut(e); };
 
     doc.addEventListener('pointerdown', onDown);
     doc.addEventListener('pointermove', onMove);
     doc.addEventListener('pointerup', onUp);
     doc.addEventListener('click', onClick, true);
     doc.addEventListener('mouseleave', onLeave);
+    doc.addEventListener('contextmenu', onContextMenu);
+    doc.addEventListener('keydown', onKey);
     return () => {
       doc.removeEventListener('pointerdown', onDown);
       doc.removeEventListener('pointermove', onMove);
       doc.removeEventListener('pointerup', onUp);
       doc.removeEventListener('click', onClick, true);
       doc.removeEventListener('mouseleave', onLeave);
+      doc.removeEventListener('contextmenu', onContextMenu);
+      doc.removeEventListener('keydown', onKey);
     };
   }, [mountNode, previewMode]);
 
@@ -202,6 +220,49 @@ export default function Canvas() {
     doc.addEventListener('drop', onDrop);
     doc.addEventListener('dragleave', onLeave);
     return () => { doc.removeEventListener('dragover', onDragOver); doc.removeEventListener('drop', onDrop); doc.removeEventListener('dragleave', onLeave); };
+  }, [mountNode, previewMode]);
+
+  // double-click to edit text inline
+  useEffect(() => {
+    const doc = iframeRef.current?.contentDocument;
+    if (!doc || previewMode) return undefined;
+    const TEXT = new Set(['Heading', 'Text', 'Button', 'Link', 'Quote']);
+    const commit = () => {
+      const ed = editingRef.current;
+      if (!ed) return;
+      editingRef.current = null;
+      useBuilder.getState().setProp(ed.id, 'text', ed.el.textContent);
+      ed.el.removeAttribute('contenteditable');
+    };
+    const onDbl = (e) => {
+      const el = e.target.closest?.('[data-ws-id]');
+      const id = el?.getAttribute('data-ws-id');
+      if (!id || !TEXT.has(useBuilder.getState().project.instances[id]?.component)) return;
+      e.preventDefault();
+      editingRef.current = { el, id };
+      el.setAttribute('contenteditable', 'true');
+      el.focus();
+      const range = doc.createRange();
+      range.selectNodeContents(el);
+      const sel = doc.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    };
+    const onKey = (e) => {
+      if (!editingRef.current) return;
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); editingRef.current.el.blur(); }
+      else if (e.key === 'Escape') { editingRef.current.el.blur(); }
+      e.stopPropagation();
+    };
+    const onFocusOut = (e) => { if (editingRef.current && e.target === editingRef.current.el) commit(); };
+    doc.addEventListener('dblclick', onDbl);
+    doc.addEventListener('keydown', onKey, true);
+    doc.addEventListener('focusout', onFocusOut, true);
+    return () => {
+      doc.removeEventListener('dblclick', onDbl);
+      doc.removeEventListener('keydown', onKey, true);
+      doc.removeEventListener('focusout', onFocusOut, true);
+    };
   }, [mountNode, previewMode]);
 
   const page = project?.pages?.[0];

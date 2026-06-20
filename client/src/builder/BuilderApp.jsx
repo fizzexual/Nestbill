@@ -12,6 +12,15 @@ import Navigator from './Navigator.jsx';
 import ProjectBar from './ProjectBar.jsx';
 import { useAutosave } from './useAutosave.js';
 import { getLastId, loadLocal, getServerId, isValidProject } from './persist.js';
+import { handleShortcut } from './actions.js';
+import ContextMenu from './ContextMenu.jsx';
+import { TEMPLATES } from './templates.js';
+
+function addTemplate(tpl) {
+  const rootId = useBuilder.getState().project.pages[0].rootId;
+  const id = useBuilder.getState().pasteSnapshot(rootId, undefined, tpl.build());
+  if (id) useUI.getState().select(id);
+}
 
 const BP_ICONS = { base: Monitor, tablet: Tablet, mobile: Smartphone };
 
@@ -57,22 +66,9 @@ export default function BuilderApp() {
     }
   }, [project]);
 
-  // Keyboard: delete / undo / redo
+  // Keyboard shortcuts (duplicate/copy/paste/delete/undo/redo/z-order/nudge)
   useEffect(() => {
-    const onKey = (e) => {
-      const ae = document.activeElement;
-      if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) return;
-      const meta = e.ctrlKey || e.metaKey;
-      const t = useBuilder.temporal.getState();
-      if (meta && e.key.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? t.redo() : t.undo(); return; }
-      if (meta && e.key.toLowerCase() === 'y') { e.preventDefault(); t.redo(); return; }
-      const sel = useUI.getState().selectedId;
-      if (sel && (e.key === 'Delete' || e.key === 'Backspace')) {
-        e.preventDefault();
-        useBuilder.getState().remove(sel);
-        useUI.getState().select(null);
-      }
-    };
+    const onKey = (e) => handleShortcut(e);
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
@@ -120,6 +116,20 @@ export default function BuilderApp() {
         {!previewMode && (
           <aside className="flex w-56 shrink-0 flex-col border-r border-neutral-200 bg-white">
             <div className="shrink-0 border-b border-neutral-100 p-2">
+              <div className="px-1 pb-2 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">Sections</div>
+              <div className="flex flex-col gap-1">
+                {TEMPLATES.map((t) => (
+                  <button
+                    key={t.label}
+                    onClick={() => addTemplate(t)}
+                    className="rounded-md border border-neutral-200 px-2 py-1.5 text-left text-xs text-neutral-700 hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700"
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="shrink-0 border-b border-neutral-100 p-2">
               <div className="px-1 pb-2 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">Insert</div>
               <div className="grid grid-cols-2 gap-1.5">
                 {COMPONENT_LIST.map((c) => {
@@ -154,6 +164,7 @@ export default function BuilderApp() {
           </aside>
         )}
       </div>
+      <ContextMenu />
     </div>
   );
 }

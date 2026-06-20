@@ -2,6 +2,11 @@ import { create } from 'zustand';
 import { temporal } from 'zundo';
 import { COMPONENTS } from './components.jsx';
 import { createInstance, findParentId, collectSubtree, isAncestor } from './model.js';
+import { newId } from '../lib/ids.js';
+
+// In-memory clipboard for copy/paste (a serialized subtree snapshot).
+let clipboardSnap = null;
+export const clipboard = { set: (v) => { clipboardSnap = v; }, get: () => clipboardSnap };
 
 /** Document store (instances + styles). Tracked by undo/redo. */
 export const useBuilder = create(
@@ -104,6 +109,32 @@ export const useBuilder = create(
         return newId;
       },
 
+      /** Insert a snapshot subtree (with fresh ids) under parentId. Returns the new root id. */
+      pasteSnapshot(parentId, index, snap) {
+        let newRootId = null;
+        set((s) => {
+          if (!s.project || !snap) return s;
+          const map = {};
+          for (const oldId of Object.keys(snap.instances)) map[oldId] = newId('i');
+          const instances = { ...s.project.instances };
+          const styles = { ...s.project.styles };
+          for (const oldId of Object.keys(snap.instances)) {
+            const src = snap.instances[oldId];
+            const nid = map[oldId];
+            instances[nid] = { ...src, id: nid, props: { ...src.props }, children: src.children.map((c) => map[c]) };
+            styles[nid] = JSON.parse(JSON.stringify(snap.styles[oldId] || {}));
+          }
+          newRootId = map[snap.rootId];
+          const parent = { ...instances[parentId] };
+          const kids = [...parent.children];
+          kids.splice(index ?? kids.length, 0, newRootId);
+          parent.children = kids;
+          instances[parentId] = parent;
+          return { project: { ...s.project, instances, styles } };
+        });
+        return newRootId;
+      },
+
       rename(id, label) {
         set((s) => {
           if (!s.project) return s;
@@ -164,10 +195,12 @@ export const useUI = create((set) => ({
   previewMode: false,
   serverId: null,
   saveStatus: 'idle', // 'idle' | 'saving' | 'cloud' | 'local'
+  menu: null, // { x, y, id } context menu
   select: (id) => set({ selectedId: id }),
   hover: (id) => set({ hoveredId: id }),
   setBreakpoint: (breakpoint) => set({ breakpoint }),
   setPreview: (previewMode) => set({ previewMode }),
   setServerId: (serverId) => set({ serverId }),
   setSaveStatus: (saveStatus) => set({ saveStatus }),
+  setMenu: (menu) => set({ menu }),
 }));

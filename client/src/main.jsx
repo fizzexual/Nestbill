@@ -4,10 +4,11 @@ import ErrorBoundary from './components/ErrorBoundary.jsx';
 import './index.css';
 import { useBuilder, useUI } from './builder/store.js';
 import { exportHtml } from './builder/exportSite.js';
+import * as actions from './builder/actions.js';
 
 // Expose stores in dev for debugging and automated verification.
 if (import.meta.env.DEV) {
-  window.__prism = { useBuilder, useUI, exportHtml };
+  window.__prism = { useBuilder, useUI, exportHtml, actions };
 }
 
 // NOTE: StrictMode is intentionally omitted — the iframe canvas does imperative
