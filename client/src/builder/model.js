@@ -93,5 +93,6 @@ export function defaultProject(name = 'My Site') {
     pages: [{ id: newId('page'), name: 'Home', rootId: body.id }],
     instances,
     styles,
+    tokens: { colors: ['#4f46e5', '#7c3aed', '#ec4899', '#111827', '#6b7280', '#10b981', '#f59e0b', '#ffffff'] },
   };
 }

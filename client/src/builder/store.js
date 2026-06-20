@@ -23,6 +23,10 @@ export const useBuilder = create(
         set((s) => (s.project ? { project: { ...s.project, name } } : s));
       },
 
+      setColorTokens(colors) {
+        set((s) => (s.project ? { project: { ...s.project, tokens: { ...(s.project.tokens || {}), colors } } } : s));
+      },
+
       /** Insert a new component as a child of parentId at index. Returns the new id. */
       insert(component, parentId, index) {
         const inst = createInstance(component);

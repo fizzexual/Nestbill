@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { HexColorPicker } from 'react-colorful';
 import { parseLength } from './styleUtils.js';
+import { useBuilder } from './store.js';
 
 const inputCls =
   'w-full rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs text-neutral-800 outline-none focus:border-indigo-400';
@@ -158,6 +159,7 @@ export function Segmented({ value, onChange, options }) {
 
 export function ColorField({ value, onChange }) {
   const [open, setOpen] = useState(false);
+  const swatches = useBuilder((s) => s.project?.tokens?.colors) || [];
   const color = value || '';
   return (
     <div className="relative flex items-center gap-1.5">
@@ -181,6 +183,13 @@ export function ColorField({ value, onChange }) {
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-8 z-50 rounded-lg bg-white p-2 shadow-xl ring-1 ring-black/10">
             <HexColorPicker color={color || '#000000'} onChange={onChange} />
+            {swatches.length > 0 && (
+              <div className="mt-2 flex w-[200px] flex-wrap gap-1">
+                {swatches.map((c) => (
+                  <button key={c} type="button" onClick={() => onChange(c)} title={c} style={{ background: c }} className="h-5 w-5 rounded border border-neutral-300" />
+                ))}
+              </div>
+            )}
           </div>
         </>
       )}

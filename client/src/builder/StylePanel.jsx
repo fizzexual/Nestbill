@@ -103,14 +103,53 @@ function FourSides({ label, prefix, v, set }) {
   );
 }
 
+function ThemePanel({ project }) {
+  const colors = project.tokens?.colors || [];
+  const setColors = (c) => useBuilder.getState().setColorTokens(c);
+  return (
+    <div className="p-3">
+      <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">Theme colors</div>
+      <div className="grid grid-cols-6 gap-2">
+        {colors.map((c, i) => (
+          <div key={i} className="group relative">
+            <input
+              type="color"
+              value={c}
+              onChange={(e) => { const n = [...colors]; n[i] = e.target.value; setColors(n); }}
+              className="h-8 w-full cursor-pointer rounded border border-neutral-200 bg-white p-0"
+              title={c}
+            />
+            <button
+              onClick={() => setColors(colors.filter((_, j) => j !== i))}
+              className="absolute -right-1 -top-1 hidden h-4 w-4 place-items-center rounded-full bg-neutral-700 text-[10px] leading-none text-white group-hover:grid"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+        <button
+          onClick={() => setColors([...colors, '#000000'])}
+          className="grid h-8 place-items-center rounded border border-dashed border-neutral-300 text-neutral-400 hover:border-indigo-400 hover:text-indigo-500"
+        >
+          +
+        </button>
+      </div>
+      <p className="mt-5 text-center text-[11px] leading-relaxed text-neutral-400">
+        Select an element on the canvas to edit it. These colors appear as swatches in every color picker.
+      </p>
+    </div>
+  );
+}
+
 export default function StylePanel() {
   const project = useBuilder((s) => s.project);
   const selectedId = useUI((s) => s.selectedId);
   const breakpoint = useUI((s) => s.breakpoint);
   const activePageId = useUI((s) => s.activePageId);
 
-  if (!project || !selectedId || !project.instances[selectedId]) {
-    return <p className="px-3 py-8 text-center text-xs text-neutral-400">Select an element on the canvas.</p>;
+  if (!project) return null;
+  if (!selectedId || !project.instances[selectedId]) {
+    return <ThemePanel project={project} />;
   }
 
   const inst = project.instances[selectedId];
