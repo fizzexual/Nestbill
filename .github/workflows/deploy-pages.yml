@@ -30,11 +30,11 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm install
-      - name: Build client (served under /Nestbill/)
+      - name: Build client (served under /Prism/)
         run: npm run build
         working-directory: client
         env:
-          BUILD_BASE: /Nestbill/
+          BUILD_BASE: /Prism/
       - uses: actions/configure-pages@v5
         with:
           enablement: true
