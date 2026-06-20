@@ -51,6 +51,27 @@ function computeDrop(e, doc, instances, rootId, excludeId) {
   return { parentId, index, line: { left: rect.left, top: after ? rect.bottom : rect.top, width: rect.width } };
 }
 
+/** Snap a free element's rect to other elements' / page edges & centers. Coords are root-relative. */
+function snapFree(rect, others, pageW, pageH, t = 6) {
+  const mx = [rect.left, rect.left + rect.width / 2, rect.left + rect.width];
+  const my = [rect.top, rect.top + rect.height / 2, rect.top + rect.height];
+  const cx = [0, pageW / 2, pageW];
+  const cy = [0, pageH / 2, pageH];
+  for (const o of others) {
+    cx.push(o.left, o.left + o.width / 2, o.left + o.width);
+    cy.push(o.top, o.top + o.height / 2, o.top + o.height);
+  }
+  let dx = 0;
+  let dy = 0;
+  let guideX = null;
+  let guideY = null;
+  let bestX = t + 1;
+  let bestY = t + 1;
+  for (const m of mx) for (const c of cx) { const d = c - m; if (Math.abs(d) <= t && Math.abs(d) < bestX) { bestX = Math.abs(d); dx = d; guideX = c; } }
+  for (const m of my) for (const c of cy) { const d = c - m; if (Math.abs(d) <= t && Math.abs(d) < bestY) { bestY = Math.abs(d); dy = d; guideY = c; } }
+  return { left: rect.left + dx, top: rect.top + dy, guideX, guideY };
+}
+
 export default function Canvas() {
   const project = useBuilder((s) => s.project);
   const styles = project?.styles;
@@ -62,6 +83,7 @@ export default function Canvas() {
   const wsStyleRef = useRef(null);
   const [mountNode, setMountNode] = useState(null);
   const [dropLine, setDropLine] = useState(null);
+  const [guides, setGuides] = useState([]);
   const editingRef = useRef(null);
 
   useEffect(() => {
@@ -118,7 +140,7 @@ export default function Canvas() {
         // Free element: drag to reposition (absolute left/top).
         const er = el.getBoundingClientRect();
         const rr = doc.querySelector(`[data-ws-id="${rootId()}"]`).getBoundingClientRect();
-        drag = { type: 'move', id, el, sx: e.clientX, sy: e.clientY, left: Math.round(er.left - rr.left), top: Math.round(er.top - rr.top), moved: false };
+        drag = { type: 'move', id, el, sx: e.clientX, sy: e.clientY, left: Math.round(er.left - rr.left), top: Math.round(er.top - rr.top), w: Math.round(er.width), h: Math.round(er.height), moved: false };
       } else {
         // Flow element: drag to reorder in the layout.
         drag = { type: 'reorder', id, el, sx: e.clientX, sy: e.clientY, moved: false, drop: null };
@@ -133,8 +155,18 @@ export default function Canvas() {
       if (!drag.moved && Math.hypot(dx, dy) < 4) return;
       drag.moved = true;
       if (drag.type === 'move') {
-        drag.el.style.left = `${drag.left + dx}px`;
-        drag.el.style.top = `${drag.top + dy}px`;
+        const rr = doc.querySelector(`[data-ws-id="${rootId()}"]`).getBoundingClientRect();
+        const rid = rootId();
+        const others = [...doc.querySelectorAll('[data-ws-id]')]
+          .filter((n) => n !== drag.el && n.getAttribute('data-ws-id') !== rid && !drag.el.contains(n) && !n.contains(drag.el))
+          .map((n) => { const r = n.getBoundingClientRect(); return { left: r.left - rr.left, top: r.top - rr.top, width: r.width, height: r.height }; });
+        const snapped = snapFree({ left: drag.left + dx, top: drag.top + dy, width: drag.w, height: drag.h }, others, rr.width, rr.height);
+        drag.el.style.left = `${Math.round(snapped.left)}px`;
+        drag.el.style.top = `${Math.round(snapped.top)}px`;
+        const gs = [];
+        if (snapped.guideX != null) gs.push({ axis: 'x', pos: rr.left + snapped.guideX });
+        if (snapped.guideY != null) gs.push({ axis: 'y', pos: rr.top + snapped.guideY });
+        setGuides(gs);
       } else {
         drag.el.style.opacity = '0.4';
         drag.drop = computeDrop(e, doc, useBuilder.getState().project.instances, rootId(), drag.id);
@@ -163,6 +195,7 @@ export default function Canvas() {
           setDropLine(null);
         }
       }
+      setGuides([]);
       drag = null;
     };
     const onClick = (e) => e.preventDefault(); // block link/button navigation in edit mode
@@ -297,6 +330,13 @@ export default function Canvas() {
         <div
           style={{ position: 'fixed', left: fr.left + dropLine.left, top: fr.top + dropLine.top - 1, width: dropLine.width, height: 2, background: '#4f46e5', borderRadius: 2, zIndex: 60, pointerEvents: 'none' }}
         />
+      )}
+      {!previewMode && fr && guides.map((g, i) =>
+        g.axis === 'x' ? (
+          <div key={i} style={{ position: 'fixed', left: fr.left + g.pos, top: fr.top, width: 1, height: fr.height, background: '#ec4899', zIndex: 61, pointerEvents: 'none' }} />
+        ) : (
+          <div key={i} style={{ position: 'fixed', left: fr.left, top: fr.top + g.pos, height: 1, width: fr.width, background: '#ec4899', zIndex: 61, pointerEvents: 'none' }} />
+        ),
       )}
     </div>
   );
