@@ -157,6 +157,21 @@ export function Segmented({ value, onChange, options }) {
   );
 }
 
+export function ToggleField({ label, checked, onChange }) {
+  return (
+    <label className="flex cursor-pointer items-center justify-between gap-2">
+      <span className="text-[11px] text-neutral-500">{label}</span>
+      <button
+        type="button"
+        onClick={() => onChange(!checked)}
+        className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${checked ? 'bg-indigo-600' : 'bg-neutral-300'}`}
+      >
+        <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${checked ? 'left-[18px]' : 'left-0.5'}`} />
+      </button>
+    </label>
+  );
+}
+
 export function ColorField({ value, onChange }) {
   const [open, setOpen] = useState(false);
   const swatches = useBuilder((s) => s.project?.tokens?.colors) || [];

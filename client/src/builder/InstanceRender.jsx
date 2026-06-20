@@ -1,4 +1,8 @@
+import { lazy, Suspense } from 'react';
 import { COMPONENTS, ICON_SET } from './components.jsx';
+
+// Lazy so three.js only loads when a 3D element is present.
+const ThreeBox = lazy(() => import('./ThreeBox.jsx'));
 
 /**
  * Recursively render an instance as a real HTML element inside the iframe.
@@ -32,6 +36,14 @@ export function InstanceRender({ id, instances }) {
         </Tag>
       );
     }
+    case '3D':
+      return (
+        <Tag {...common}>
+          <Suspense fallback={null}>
+            <ThreeBox config={inst.props} />
+          </Suspense>
+        </Tag>
+      );
     default:
       break;
   }

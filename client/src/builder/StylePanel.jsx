@@ -3,7 +3,7 @@ import { useBuilder, useUI } from './store.js';
 import { getActivePage } from './model.js';
 import { ICON_SET } from './components.jsx';
 import { effectiveStyle, isSetAt } from './styleUtils.js';
-import { Section, Field, LengthField, PxField, NumberField, SelectField, Segmented, ColorField, TextField, TextAreaField } from './controls.jsx';
+import { Section, Field, LengthField, PxField, NumberField, SelectField, Segmented, ColorField, TextField, TextAreaField, ToggleField } from './controls.jsx';
 
 function fileToDataUrl(file) {
   return new Promise((res, rej) => {
@@ -65,6 +65,24 @@ function ContentSection({ inst }) {
     return (
       <Section title="Content">
         <Field label="Icon"><SelectField value={inst.props.iconName} onChange={(v) => setProp('iconName', v)} options={Object.keys(ICON_SET)} /></Field>
+      </Section>
+    );
+  }
+  if (c === '3D') {
+    return (
+      <Section title="3D Object">
+        <Field label="Shape"><SelectField value={inst.props.shape} onChange={(v) => setProp('shape', v)} options={['cube', 'sphere', 'torus', 'cone', 'torusKnot']} /></Field>
+        <Field label="Color"><ColorField value={inst.props.color} onChange={(v) => setProp('color', v)} /></Field>
+        <ToggleField label="Auto-rotate" checked={inst.props.autoRotate !== false} onChange={(v) => setProp('autoRotate', v)} />
+        <ToggleField label="Wireframe" checked={!!inst.props.wireframe} onChange={(v) => setProp('wireframe', v)} />
+        <div>
+          <div className="flex justify-between text-[11px] text-neutral-400"><span>Metalness</span><span>{Number(inst.props.metalness ?? 0.4).toFixed(2)}</span></div>
+          <input type="range" min="0" max="1" step="0.05" value={inst.props.metalness ?? 0.4} onChange={(e) => setProp('metalness', Number(e.target.value))} className="w-full" />
+        </div>
+        <div>
+          <div className="flex justify-between text-[11px] text-neutral-400"><span>Roughness</span><span>{Number(inst.props.roughness ?? 0.35).toFixed(2)}</span></div>
+          <input type="range" min="0" max="1" step="0.05" value={inst.props.roughness ?? 0.35} onChange={(e) => setProp('roughness', Number(e.target.value))} className="w-full" />
+        </div>
       </Section>
     );
   }

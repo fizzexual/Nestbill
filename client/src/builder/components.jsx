@@ -26,6 +26,7 @@ import {
   Play,
   Bell,
   Search,
+  Boxes,
 } from 'lucide-react';
 
 /** Curated icon set available to the Icon widget. */
@@ -236,11 +237,19 @@ export const COMPONENTS = {
     icon: StretchVertical,
     defaultStyle: { height: '48px' },
   },
+  '3D': {
+    label: '3D Object',
+    tag: 'div',
+    container: false,
+    icon: Boxes,
+    defaultProps: { shape: 'torusKnot', color: '#6366f1', autoRotate: true, metalness: 0.4, roughness: 0.35, wireframe: false },
+    defaultStyle: { width: '320px', height: '280px', 'border-radius': '12px', overflow: 'hidden', 'background-color': '#0b1020' },
+  },
 };
 
 /** Components offered in the insert panel (Body is implicit). */
 export const COMPONENT_LIST = [
-  'Section', 'Columns', 'Grid', 'Box', 'Card', 'Heading', 'Text', 'Quote', 'Link', 'Button', 'Image', 'Icon', 'Input', 'Textarea', 'Divider', 'Spacer',
+  'Section', 'Columns', 'Grid', 'Box', 'Card', 'Heading', 'Text', 'Quote', 'Link', 'Button', 'Image', 'Icon', '3D', 'Input', 'Textarea', 'Divider', 'Spacer',
 ];
 
 export const isContainer = (component) => !!COMPONENTS[component]?.container;

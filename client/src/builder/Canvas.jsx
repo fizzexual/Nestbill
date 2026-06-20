@@ -10,7 +10,7 @@ import { InstanceRender } from './InstanceRender.jsx';
 import Overlay from './Overlay.jsx';
 
 const RESET = `*,*::before,*::after{box-sizing:border-box}html,body{margin:0;padding:0}body{min-height:100%}img{max-width:100%}`;
-const EDIT_HELPERS = `[data-ws-id]:empty{min-height:48px;min-width:48px;outline:1px dashed #cbd5e1;outline-offset:-1px}`;
+const EDIT_HELPERS = `[data-ws-id]:empty{min-height:48px;min-width:48px;outline:1px dashed #cbd5e1;outline-offset:-1px} canvas{pointer-events:none}`;
 
 const DRAG_TYPE = 'text/prism-component';
 
