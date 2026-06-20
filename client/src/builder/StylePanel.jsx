@@ -30,7 +30,7 @@ function ContentSection({ inst }) {
             className="hidden"
             onChange={async (e) => {
               const f = e.target.files?.[0];
-              if (f) setProp('src', await fileToDataUrl(f));
+              if (f) { const src = await fileToDataUrl(f); useBuilder.getState().addAsset(f.name, src); setProp('src', src); }
               e.target.value = '';
             }}
           />

@@ -27,6 +27,15 @@ export const useBuilder = create(
         set((s) => (s.project ? { project: { ...s.project, tokens: { ...(s.project.tokens || {}), colors } } } : s));
       },
 
+      addAsset(name, src) {
+        const id = newId('asset');
+        set((s) => (s.project ? { project: { ...s.project, assets: [...(s.project.assets || []), { id, name, src }] } } : s));
+        return id;
+      },
+      removeAsset(id) {
+        set((s) => (s.project ? { project: { ...s.project, assets: (s.project.assets || []).filter((a) => a.id !== id) } } : s));
+      },
+
       /** Insert a new component as a child of parentId at index. Returns the new id. */
       insert(component, parentId, index) {
         const inst = createInstance(component);

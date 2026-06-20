@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from 'zustand';
 import { Undo2, Redo2, Monitor, Tablet, Smartphone, Eye, Download } from 'lucide-react';
 import { downloadHtml } from './exportSite.js';
@@ -9,6 +9,7 @@ import { BREAKPOINTS } from './cssGen.js';
 import Canvas from './Canvas.jsx';
 import StylePanel from './StylePanel.jsx';
 import Navigator from './Navigator.jsx';
+import AssetsPanel from './AssetsPanel.jsx';
 import ProjectBar from './ProjectBar.jsx';
 import PagesMenu from './PagesMenu.jsx';
 import { useAutosave } from './useAutosave.js';
@@ -53,6 +54,7 @@ export default function BuilderApp() {
   const previewMode = useUI((s) => s.previewMode);
   const past = useStore(useBuilder.temporal, (s) => s.pastStates.length);
   const future = useStore(useBuilder.temporal, (s) => s.futureStates.length);
+  const [leftTab, setLeftTab] = useState('add');
   useAutosave();
 
   useEffect(() => {
@@ -115,44 +117,60 @@ export default function BuilderApp() {
       <div className="flex min-h-0 flex-1">
         {!previewMode && (
           <aside className="flex w-56 shrink-0 flex-col border-r border-neutral-200 bg-white">
-            <div className="shrink-0 border-b border-neutral-100 p-2">
-              <div className="px-1 pb-2 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">Sections</div>
-              <div className="flex flex-col gap-1">
-                {TEMPLATES.map((t) => (
-                  <button
-                    key={t.label}
-                    onClick={() => addTemplate(t)}
-                    className="rounded-md border border-neutral-200 px-2 py-1.5 text-left text-xs text-neutral-700 hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700"
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
+            <div className="flex shrink-0 border-b border-neutral-200">
+              {['add', 'layers', 'assets'].map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setLeftTab(t)}
+                  className={`flex-1 py-2 text-[11px] font-medium capitalize ${leftTab === t ? 'border-b-2 border-indigo-500 text-indigo-600' : 'text-neutral-500 hover:text-neutral-800'}`}
+                >
+                  {t}
+                </button>
+              ))}
             </div>
-            <div className="shrink-0 border-b border-neutral-100 p-2">
-              <div className="px-1 pb-2 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">Insert</div>
-              <div className="grid grid-cols-2 gap-1.5">
-                {COMPONENT_LIST.map((c) => {
-                  const Icon = COMPONENTS[c].icon;
-                  return (
-                    <button
-                      key={c}
-                      onClick={() => addComponent(c)}
-                      draggable
-                      onDragStart={(e) => {
-                        e.dataTransfer.setData('text/prism-component', c);
-                        e.dataTransfer.effectAllowed = 'copy';
-                      }}
-                      className="flex cursor-grab flex-col items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 py-2 text-[11px] text-neutral-600 hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700 active:cursor-grabbing"
-                    >
-                      <Icon size={15} />
-                      {COMPONENTS[c].label}
-                    </button>
-                  );
-                })}
+            {leftTab === 'add' && (
+              <div className="min-h-0 flex-1 overflow-y-auto scroll-thin">
+                <div className="border-b border-neutral-100 p-2">
+                  <div className="px-1 pb-2 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">Sections</div>
+                  <div className="flex flex-col gap-1">
+                    {TEMPLATES.map((t) => (
+                      <button
+                        key={t.label}
+                        onClick={() => addTemplate(t)}
+                        className="rounded-md border border-neutral-200 px-2 py-1.5 text-left text-xs text-neutral-700 hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700"
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="p-2">
+                  <div className="px-1 pb-2 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">Insert</div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {COMPONENT_LIST.map((c) => {
+                      const Icon = COMPONENTS[c].icon;
+                      return (
+                        <button
+                          key={c}
+                          onClick={() => addComponent(c)}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData('text/prism-component', c);
+                            e.dataTransfer.effectAllowed = 'copy';
+                          }}
+                          className="flex cursor-grab flex-col items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 py-2 text-[11px] text-neutral-600 hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700 active:cursor-grabbing"
+                        >
+                          <Icon size={15} />
+                          {COMPONENTS[c].label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
-            </div>
-            <Navigator />
+            )}
+            {leftTab === 'layers' && <Navigator />}
+            {leftTab === 'assets' && <AssetsPanel />}
           </aside>
         )}
 
