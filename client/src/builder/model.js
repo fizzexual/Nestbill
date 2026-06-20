@@ -35,6 +35,12 @@ export function isAncestor(instances, maybeAncestor, id) {
   return collectSubtree(instances, maybeAncestor).includes(id);
 }
 
+/** Resolve the active page (falls back to the first page). */
+export function getActivePage(project, activePageId) {
+  if (!project) return null;
+  return project.pages.find((p) => p.id === activePageId) || project.pages[0];
+}
+
 /** Serialize a subtree (instances + styles) for copy/paste. */
 export function snapshotSubtree(project, id) {
   const instances = {};

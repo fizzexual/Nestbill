@@ -143,6 +143,38 @@ export const useBuilder = create(
         });
       },
 
+      addPage(name = 'Page') {
+        const body = createInstance('Body');
+        const pageId = newId('page');
+        set((s) => {
+          if (!s.project) return s;
+          return {
+            project: {
+              ...s.project,
+              instances: { ...s.project.instances, [body.id]: body },
+              styles: { ...s.project.styles, [body.id]: { base: { ...COMPONENTS.Body.defaultStyle } } },
+              pages: [...s.project.pages, { id: pageId, name, rootId: body.id }],
+            },
+          };
+        });
+        return pageId;
+      },
+      removePage(pageId) {
+        set((s) => {
+          if (!s.project || s.project.pages.length <= 1) return s;
+          const page = s.project.pages.find((p) => p.id === pageId);
+          if (!page) return s;
+          const ids = collectSubtree(s.project.instances, page.rootId);
+          const instances = { ...s.project.instances };
+          const styles = { ...s.project.styles };
+          for (const i of ids) { delete instances[i]; delete styles[i]; }
+          return { project: { ...s.project, instances, styles, pages: s.project.pages.filter((p) => p.id !== pageId) } };
+        });
+      },
+      renamePage(pageId, name) {
+        set((s) => (s.project ? { project: { ...s.project, pages: s.project.pages.map((p) => (p.id === pageId ? { ...p, name } : p)) } } : s));
+      },
+
       setProp(id, prop, value) {
         set((s) => {
           if (!s.project) return s;
@@ -196,6 +228,8 @@ export const useUI = create((set) => ({
   serverId: null,
   saveStatus: 'idle', // 'idle' | 'saving' | 'cloud' | 'local'
   menu: null, // { x, y, id } context menu
+  activePageId: null,
+  setActivePage: (activePageId) => set({ activePageId, selectedId: null, menu: null }),
   select: (id) => set({ selectedId: id }),
   hover: (id) => set({ hoveredId: id }),
   setBreakpoint: (breakpoint) => set({ breakpoint }),

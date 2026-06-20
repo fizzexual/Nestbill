@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronRight, ChevronDown } from 'lucide-react';
 import { useBuilder, useUI } from './store.js';
 import { COMPONENTS } from './components.jsx';
+import { getActivePage } from './model.js';
 
 function NavNode({ id, depth, collapsed, toggle }) {
   const inst = useBuilder((s) => s.project.instances[id]);
@@ -43,7 +44,9 @@ function NavNode({ id, depth, collapsed, toggle }) {
 }
 
 export default function Navigator() {
-  const rootId = useBuilder((s) => s.project?.pages?.[0]?.rootId);
+  const project = useBuilder((s) => s.project);
+  const activePageId = useUI((s) => s.activePageId);
+  const rootId = getActivePage(project, activePageId)?.rootId;
   const [collapsed, setCollapsed] = useState(() => new Set());
   const toggle = (id) =>
     setCollapsed((prev) => {

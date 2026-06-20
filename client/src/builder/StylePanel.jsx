@@ -1,5 +1,6 @@
 import { AlignLeft, AlignCenter, AlignRight, AlignJustify, ArrowRight, ArrowDown, Copy, Trash2 } from 'lucide-react';
 import { useBuilder, useUI } from './store.js';
+import { getActivePage } from './model.js';
 import { effectiveStyle, isSetAt } from './styleUtils.js';
 import { Section, Field, LengthField, PxField, NumberField, SelectField, Segmented, ColorField, TextField, TextAreaField } from './controls.jsx';
 
@@ -98,6 +99,7 @@ export default function StylePanel() {
   const project = useBuilder((s) => s.project);
   const selectedId = useUI((s) => s.selectedId);
   const breakpoint = useUI((s) => s.breakpoint);
+  const activePageId = useUI((s) => s.activePageId);
 
   if (!project || !selectedId || !project.instances[selectedId]) {
     return <p className="px-3 py-8 text-center text-xs text-neutral-400">Select an element on the canvas.</p>;
@@ -115,7 +117,7 @@ export default function StylePanel() {
   const position = v('position');
   const opacityPct = v('opacity') === '' ? 100 : Math.round(Number(v('opacity')) * 100);
 
-  const rootId = project.pages[0].rootId;
+  const rootId = getActivePage(project, activePageId).rootId;
   const isRoot = selectedId === rootId;
   const isFree = position === 'absolute' || position === 'fixed';
   const nextZ = () => {

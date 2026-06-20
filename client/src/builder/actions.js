@@ -1,10 +1,11 @@
 import { useBuilder, useUI, clipboard } from './store.js';
 import { effectiveStyle } from './styleUtils.js';
-import { findParentId, snapshotSubtree } from './model.js';
+import { findParentId, snapshotSubtree, getActivePage } from './model.js';
 import { isContainer } from './components.jsx';
 
 const project = () => useBuilder.getState().project;
 const bp = () => useUI.getState().breakpoint;
+const activePage = () => getActivePage(project(), useUI.getState().activePageId);
 
 const nextZ = () => {
   let m = 0;
@@ -17,12 +18,12 @@ const nextZ = () => {
 
 export const isFree = (id) => ['absolute', 'fixed'].includes(effectiveStyle(project().styles[id] || {}, bp()).position);
 
-const isRoot = (id) => id === project().pages[0].rootId;
+const isRoot = (id) => id === activePage().rootId;
 
 /** Where should a pasted/inserted sibling go relative to the current selection? */
 function dropTarget(selId) {
   const p = project();
-  const rootId = p.pages[0].rootId;
+  const rootId = activePage().rootId;
   if (!selId || !p.instances[selId]) return { parentId: rootId, index: undefined };
   if (isContainer(p.instances[selId].component)) return { parentId: selId, index: undefined };
   const pid = findParentId(p.instances, selId);
@@ -82,7 +83,7 @@ export function sendToBack(id) {
 
 function makeFree(id) {
   const p = project();
-  const rootId = p.pages[0].rootId;
+  const rootId = activePage().rootId;
   const doc = document.querySelector('iframe')?.contentDocument;
   const el = doc?.querySelector(`[data-ws-id="${id}"]`);
   const rootEl = doc?.querySelector(`[data-ws-id="${rootId}"]`);

@@ -25,9 +25,10 @@ function renderNode(instances, id, indent) {
   return `${indent}<${def.tag} class="${c}"${attrs}>${esc(inst.props.text || '')}</${def.tag}>`;
 }
 
-/** Build a self-contained HTML document (CSS inlined) for the first page. */
-export function exportHtml(project) {
-  const page = project.pages[0];
+const slugify = (s) => String(s || 'site').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'site';
+
+/** Build a self-contained HTML document (CSS inlined) for one page. */
+export function exportHtmlForPage(project, page) {
   const body = renderNode(project.instances, page.rootId, '    ');
   const css = `*,*::before,*::after { box-sizing: border-box; }\nbody { margin: 0; }\n${generateCss(project.styles, (id) => `.${cls(id)}`)}`;
   return `<!doctype html>
@@ -35,7 +36,7 @@ export function exportHtml(project) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${esc(project.name)}</title>
+  <title>${esc(project.name)} — ${esc(page.name)}</title>
   <style>
 ${css}
   </style>
@@ -47,17 +48,35 @@ ${body}
 `;
 }
 
-/** Trigger a browser download of the exported HTML. */
-export function downloadHtml(project) {
-  const html = exportHtml(project);
-  const slug = String(project.name || 'site').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'site';
-  const blob = new Blob([html], { type: 'text/html' });
+/** Self-contained HTML for the first page (used by tests / single-page export). */
+export function exportHtml(project) {
+  return exportHtmlForPage(project, project.pages[0]);
+}
+
+function triggerDownload(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${slug}.html`;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/** Download the site: a single HTML for one page, or a ZIP of all pages. */
+export async function downloadHtml(project) {
+  const name = slugify(project.name);
+  if (project.pages.length <= 1) {
+    triggerDownload(new Blob([exportHtml(project)], { type: 'text/html' }), `${name}.html`);
+    return;
+  }
+  const JSZip = (await import('jszip')).default;
+  const zip = new JSZip();
+  project.pages.forEach((p, i) => {
+    const file = i === 0 ? 'index.html' : `${slugify(p.name) || `page-${i}`}.html`;
+    zip.file(file, exportHtmlForPage(project, p));
+  });
+  const blob = await zip.generateAsync({ type: 'blob' });
+  triggerDownload(blob, `${name}.zip`);
 }

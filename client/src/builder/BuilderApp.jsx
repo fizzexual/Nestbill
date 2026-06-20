@@ -3,13 +3,14 @@ import { useStore } from 'zustand';
 import { Undo2, Redo2, Monitor, Tablet, Smartphone, Eye, Download } from 'lucide-react';
 import { downloadHtml } from './exportSite.js';
 import { useBuilder, useUI } from './store.js';
-import { defaultProject, findParentId } from './model.js';
+import { defaultProject, findParentId, getActivePage } from './model.js';
 import { COMPONENTS, COMPONENT_LIST, isContainer } from './components.jsx';
 import { BREAKPOINTS } from './cssGen.js';
 import Canvas from './Canvas.jsx';
 import StylePanel from './StylePanel.jsx';
 import Navigator from './Navigator.jsx';
 import ProjectBar from './ProjectBar.jsx';
+import PagesMenu from './PagesMenu.jsx';
 import { useAutosave } from './useAutosave.js';
 import { getLastId, loadLocal, getServerId, isValidProject } from './persist.js';
 import { handleShortcut } from './actions.js';
@@ -17,7 +18,7 @@ import ContextMenu from './ContextMenu.jsx';
 import { TEMPLATES } from './templates.js';
 
 function addTemplate(tpl) {
-  const rootId = useBuilder.getState().project.pages[0].rootId;
+  const rootId = getActivePage(useBuilder.getState().project, useUI.getState().activePageId).rootId;
   const id = useBuilder.getState().pasteSnapshot(rootId, undefined, tpl.build());
   if (id) useUI.getState().select(id);
 }
@@ -27,7 +28,7 @@ const BP_ICONS = { base: Monitor, tablet: Tablet, mobile: Smartphone };
 function addComponent(component) {
   const { project } = useBuilder.getState();
   const { selectedId } = useUI.getState();
-  const rootId = project.pages[0].rootId;
+  const rootId = getActivePage(project, useUI.getState().activePageId).rootId;
   let parentId = rootId;
   let index;
   if (selectedId && project.instances[selectedId]) {
@@ -58,12 +59,10 @@ export default function BuilderApp() {
     if (project) return;
     const lastId = getLastId();
     const restored = lastId ? loadLocal(lastId) : null;
-    if (restored && isValidProject(restored)) {
-      useBuilder.getState().loadProject(restored);
-      useUI.getState().setServerId(getServerId(lastId));
-    } else {
-      useBuilder.getState().loadProject(defaultProject());
-    }
+    const doc = restored && isValidProject(restored) ? restored : defaultProject();
+    useBuilder.getState().loadProject(doc);
+    if (restored && isValidProject(restored)) useUI.getState().setServerId(getServerId(lastId));
+    useUI.getState().setActivePage(doc.pages[0].id);
   }, [project]);
 
   // Keyboard shortcuts (duplicate/copy/paste/delete/undo/redo/z-order/nudge)
@@ -83,6 +82,7 @@ export default function BuilderApp() {
           <div className="h-5 w-5 rounded bg-gradient-to-br from-indigo-500 to-fuchsia-500" />
         </div>
         <ProjectBar />
+        <PagesMenu />
         <div className="flex items-center gap-0.5">
           <button disabled={!past} onClick={() => temporal.undo()} className="grid h-8 w-8 place-items-center rounded-md text-neutral-600 hover:bg-neutral-100 disabled:opacity-30" title="Undo">
             <Undo2 size={16} />

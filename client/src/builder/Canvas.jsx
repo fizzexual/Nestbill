@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useBuilder, useUI } from './store.js';
 import { BREAKPOINTS, generateCss } from './cssGen.js';
 import { COMPONENTS } from './components.jsx';
-import { findParentId } from './model.js';
+import { findParentId, getActivePage } from './model.js';
 import { effectiveStyle } from './styleUtils.js';
 import { handleShortcut } from './actions.js';
 import { InstanceRender } from './InstanceRender.jsx';
@@ -56,6 +56,7 @@ export default function Canvas() {
   const styles = project?.styles;
   const breakpoint = useUI((s) => s.breakpoint);
   const previewMode = useUI((s) => s.previewMode);
+  const activePageId = useUI((s) => s.activePageId);
 
   const iframeRef = useRef(null);
   const wsStyleRef = useRef(null);
@@ -90,7 +91,7 @@ export default function Canvas() {
     const doc = iframeRef.current?.contentDocument;
     if (!doc || previewMode) return undefined;
     const idOf = (el) => el?.closest?.('[data-ws-id]')?.getAttribute('data-ws-id') || null;
-    const rootId = () => useBuilder.getState().project.pages[0].rootId;
+    const rootId = () => getActivePage(useBuilder.getState().project, useUI.getState().activePageId).rootId;
     const nextZ = () => {
       let max = 0;
       for (const s of Object.values(useBuilder.getState().project.styles)) {
@@ -199,7 +200,7 @@ export default function Canvas() {
   useEffect(() => {
     const doc = iframeRef.current?.contentDocument;
     if (!doc || previewMode) return undefined;
-    const rootId = () => useBuilder.getState().project.pages[0].rootId;
+    const rootId = () => getActivePage(useBuilder.getState().project, useUI.getState().activePageId).rootId;
     const onDragOver = (e) => {
       if (!Array.from(e.dataTransfer.types).includes(DRAG_TYPE)) return;
       e.preventDefault();
@@ -265,7 +266,7 @@ export default function Canvas() {
     };
   }, [mountNode, previewMode]);
 
-  const page = project?.pages?.[0];
+  const page = getActivePage(project, activePageId);
   const width = BREAKPOINTS[breakpoint]?.width || 1280;
   const iframe = iframeRef.current;
   const fr = iframe?.getBoundingClientRect();
