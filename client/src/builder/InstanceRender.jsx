@@ -1,4 +1,4 @@
-import { COMPONENTS } from './components.jsx';
+import { COMPONENTS, ICON_SET } from './components.jsx';
 
 /**
  * Recursively render an instance as a real HTML element inside the iframe.
@@ -24,6 +24,14 @@ export function InstanceRender({ id, instances }) {
       return <input {...common} placeholder={inst.props.placeholder || ''} readOnly />;
     case 'Textarea':
       return <textarea {...common} placeholder={inst.props.placeholder || ''} readOnly />;
+    case 'Icon': {
+      const Ico = ICON_SET[inst.props.iconName] || ICON_SET.Star;
+      return (
+        <Tag {...common}>
+          <Ico style={{ width: '100%', height: '100%' }} />
+        </Tag>
+      );
+    }
     default:
       break;
   }

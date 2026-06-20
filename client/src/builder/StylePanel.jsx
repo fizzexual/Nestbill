@@ -1,6 +1,7 @@
 import { AlignLeft, AlignCenter, AlignRight, AlignJustify, ArrowRight, ArrowDown, Copy, Trash2 } from 'lucide-react';
 import { useBuilder, useUI } from './store.js';
 import { getActivePage } from './model.js';
+import { ICON_SET } from './components.jsx';
 import { effectiveStyle, isSetAt } from './styleUtils.js';
 import { Section, Field, LengthField, PxField, NumberField, SelectField, Segmented, ColorField, TextField, TextAreaField } from './controls.jsx';
 
@@ -57,6 +58,13 @@ function ContentSection({ inst }) {
     return (
       <Section title="Content">
         <Field label="Placeholder"><TextField value={inst.props.placeholder} onChange={(v) => setProp('placeholder', v)} /></Field>
+      </Section>
+    );
+  }
+  if (c === 'Icon') {
+    return (
+      <Section title="Content">
+        <Field label="Icon"><SelectField value={inst.props.iconName} onChange={(v) => setProp('iconName', v)} options={Object.keys(ICON_SET)} /></Field>
       </Section>
     );
   }

@@ -13,7 +13,23 @@ import {
   StretchVertical,
   Quote as QuoteIcon,
   TextCursorInput,
+  LayoutGrid,
+  Star,
+  Heart,
+  Check,
+  ArrowRight,
+  Sparkles,
+  Zap,
+  Shield,
+  Globe,
+  Mail,
+  Play,
+  Bell,
+  Search,
 } from 'lucide-react';
+
+/** Curated icon set available to the Icon widget. */
+export const ICON_SET = { Star, Heart, Check, ArrowRight, Sparkles, Zap, Shield, Globe, Mail, Play, Bell, Search };
 
 /**
  * Component registry for the flow builder. Each component renders a real HTML
@@ -56,6 +72,21 @@ export const COMPONENTS = {
     container: true,
     icon: Square,
     defaultStyle: { display: 'block', 'padding-top': '16px', 'padding-bottom': '16px', 'padding-left': '16px', 'padding-right': '16px' },
+  },
+  Grid: {
+    label: 'Grid',
+    tag: 'div',
+    container: true,
+    icon: LayoutGrid,
+    defaultStyle: { display: 'grid', 'grid-template-columns': 'repeat(3, 1fr)', gap: '16px' },
+  },
+  Icon: {
+    label: 'Icon',
+    tag: 'span',
+    container: false,
+    icon: Star,
+    defaultProps: { iconName: 'Star' },
+    defaultStyle: { display: 'inline-flex', width: '40px', height: '40px', color: '#4f46e5' },
   },
   Columns: {
     label: 'Columns',
@@ -209,7 +240,7 @@ export const COMPONENTS = {
 
 /** Components offered in the insert panel (Body is implicit). */
 export const COMPONENT_LIST = [
-  'Section', 'Columns', 'Box', 'Card', 'Heading', 'Text', 'Quote', 'Link', 'Button', 'Image', 'Input', 'Textarea', 'Divider', 'Spacer',
+  'Section', 'Columns', 'Grid', 'Box', 'Card', 'Heading', 'Text', 'Quote', 'Link', 'Button', 'Image', 'Icon', 'Input', 'Textarea', 'Divider', 'Spacer',
 ];
 
 export const isContainer = (component) => !!COMPONENTS[component]?.container;
