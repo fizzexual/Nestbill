@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useStore } from 'zustand';
-import { Undo2, Redo2, Monitor, Tablet, Smartphone, Eye, Download } from 'lucide-react';
+import { Undo2, Redo2, Monitor, Tablet, Smartphone, Eye, Download, Moon, Sun } from 'lucide-react';
 import { downloadHtml } from './exportSite.js';
 import { useBuilder, useUI } from './store.js';
 import { defaultProject, findParentId, getActivePage } from './model.js';
@@ -55,7 +55,13 @@ export default function BuilderApp() {
   const past = useStore(useBuilder.temporal, (s) => s.pastStates.length);
   const future = useStore(useBuilder.temporal, (s) => s.futureStates.length);
   const [leftTab, setLeftTab] = useState('add');
+  const [dark, setDark] = useState(() => { try { return localStorage.getItem('prismx:dark') === '1'; } catch { return false; } });
   useAutosave();
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark);
+    try { localStorage.setItem('prismx:dark', dark ? '1' : '0'); } catch { /* ignore */ }
+  }, [dark]);
 
   useEffect(() => {
     if (project) return;
@@ -104,6 +110,9 @@ export default function BuilderApp() {
             );
           })}
         </div>
+        <button onClick={() => setDark((d) => !d)} className="toolbtn" title="Toggle dark theme">
+          {dark ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
         <button onClick={() => useUI.getState().setPreview(!previewMode)}
           className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium ${previewMode ? 'bg-indigo-600 text-white' : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'}`}>
           <Eye size={14} /> Preview

@@ -24,3 +24,26 @@ body {
     @apply h-8 w-8 grid place-items-center rounded-md text-neutral-600 hover:bg-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed;
   }
 }
+
+/* ---------- Dark editor theme (chrome only; the canvas iframe is unaffected) ---------- */
+.dark .bg-white { background-color: #16181d !important; }
+.dark .bg-neutral-50 { background-color: #1c1f27 !important; }
+.dark .bg-neutral-100 { background-color: #1c1f27 !important; }
+.dark .bg-neutral-200\/70, .dark .bg-neutral-200 { background-color: #0e1014 !important; }
+.dark .text-neutral-900 { color: #f3f4f6 !important; }
+.dark .text-neutral-800 { color: #e5e7eb !important; }
+.dark .text-neutral-700 { color: #d1d5db !important; }
+.dark .text-neutral-600 { color: #b6bcc6 !important; }
+.dark .text-neutral-500 { color: #9aa0ab !important; }
+.dark .text-neutral-400 { color: #7c828d !important; }
+.dark .text-neutral-300 { color: #5b616b !important; }
+.dark .border-neutral-100 { border-color: #23262e !important; }
+.dark .border-neutral-200 { border-color: #2b2f39 !important; }
+.dark .border-neutral-300 { border-color: #3a3f4a !important; }
+.dark input, .dark select, .dark textarea { background-color: #0f1218 !important; color: #e5e7eb !important; border-color: #2b2f39 !important; }
+.dark .hover\:bg-neutral-100:hover, .dark .hover\:bg-neutral-50:hover { background-color: #262a34 !important; }
+.dark .bg-indigo-50 { background-color: rgba(99,102,241,0.16) !important; }
+.dark .hover\:bg-indigo-50:hover { background-color: rgba(99,102,241,0.22) !important; }
+.dark .text-indigo-700, .dark .text-indigo-600 { color: #a5b4fc !important; }
+.dark .ring-black\/5 { --tw-ring-color: rgba(255,255,255,0.06) !important; }
+.dark .scroll-thin::-webkit-scrollbar-thumb { background: rgba(255,255,255,.16); }
