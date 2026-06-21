@@ -321,10 +321,12 @@ export default function DeviceFrame({ breakpoint, scale, isActive, overlayLayer 
   return (
     <>
       <div className="flex shrink-0 flex-col">
-        <div className={`flex items-center gap-2 px-1 pb-1.5 text-[11px] font-medium ${isActive ? 'text-indigo-600' : 'text-neutral-500'}`}>
-          <span className={`h-1.5 w-1.5 rounded-full ${isActive ? 'bg-indigo-500' : 'bg-neutral-300'}`} />
-          {BREAKPOINTS[breakpoint]?.label} · {width}
-        </div>
+        {!previewMode && (
+          <div className={`flex items-center gap-2 px-1 pb-1.5 text-[11px] font-medium ${isActive ? 'text-indigo-600' : 'text-neutral-500'}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${isActive ? 'bg-indigo-500' : 'bg-neutral-300'}`} />
+            {BREAKPOINTS[breakpoint]?.label} · {width}
+          </div>
+        )}
         <div className={`overflow-hidden rounded-xl bg-white shadow-[0_2px_8px_rgba(0,0,0,.06),0_20px_48px_rgba(0,0,0,.12)] ${isActive ? 'ring-2 ring-indigo-400' : 'ring-1 ring-black/5'}`} style={{ width }}>
           {/* eslint-disable-next-line jsx-a11y/iframe-has-title */}
           <iframe ref={iframeRef} title={`Canvas ${breakpoint}`} className="block w-full border-0" style={{ minHeight: 400 }} />
