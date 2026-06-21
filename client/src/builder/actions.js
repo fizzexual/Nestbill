@@ -81,13 +81,13 @@ export function sendToBack(id) {
   }
 }
 
-function makeFree(id) {
+function makeFree(id, position = 'absolute') {
   const p = project();
   const rootId = activePage().rootId;
   const doc = document.querySelector('iframe')?.contentDocument;
   const el = doc?.querySelector(`[data-ws-id="${id}"]`);
   const rootEl = doc?.querySelector(`[data-ws-id="${rootId}"]`);
-  const decls = { position: 'absolute', margin: '0px', 'z-index': String(nextZ()) };
+  const decls = { position, margin: '0px', 'z-index': String(nextZ()) };
   if (el && rootEl) {
     const er = el.getBoundingClientRect();
     const rr = rootEl.getBoundingClientRect();
@@ -109,6 +109,19 @@ export function toggleFree(id) {
   if (!target || isRoot(target)) return;
   if (isFree(target)) makeFlow(target);
   else makeFree(target);
+}
+
+/** Set an element's position type (flow | absolute | fixed | sticky). */
+export function setPositionType(id, type) {
+  const target = id || useUI.getState().selectedId;
+  if (!target || isRoot(target)) return;
+  if (type === 'sticky') {
+    const st = effectiveStyle(project().styles[target] || {}, bp());
+    useBuilder.getState().setStyles(target, bp(), { position: 'sticky', top: st.top || '0px', left: '', right: '', bottom: '', margin: '' });
+    return;
+  }
+  if (type === 'absolute' || type === 'fixed') { makeFree(target, type); return; }
+  makeFlow(target);
 }
 
 const ARROWS = { arrowleft: [-1, 0], arrowright: [1, 0], arrowup: [0, -1], arrowdown: [0, 1] };
