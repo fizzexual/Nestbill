@@ -9,6 +9,7 @@ import LayoutSection from './panels/LayoutSection.jsx';
 import PositionSection from './panels/PositionSection.jsx';
 import TransformSection from './panels/TransformSection.jsx';
 import AppearanceSection from './panels/AppearanceSection.jsx';
+import FiltersSection from './panels/FiltersSection.jsx';
 import { Section, Field, LengthField, PxField, SelectField, Segmented, ColorField, TextField, TextAreaField, ToggleField } from './controls.jsx';
 
 function fileToDataUrl(file) {
@@ -243,6 +244,8 @@ export default function StylePanel() {
         <TransformSection eff={eff} set={set} />
 
         <AppearanceSection id={selectedId} eff={eff} set={set} />
+
+        <FiltersSection eff={eff} set={set} />
 
         {!isRoot && <PositionSection id={selectedId} eff={eff} set={set} />}
       </div>
