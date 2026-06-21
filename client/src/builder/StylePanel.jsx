@@ -3,6 +3,8 @@ import { useBuilder, useUI } from './store.js';
 import { getActivePage } from './model.js';
 import { ICON_SET } from './components.jsx';
 import { effectiveStyle, isSetAt } from './styleUtils.js';
+import { parentContext } from './layout.js';
+import SizeSection from './panels/SizeSection.jsx';
 import { Section, Field, LengthField, PxField, NumberField, SelectField, Segmented, ColorField, TextField, TextAreaField, ToggleField } from './controls.jsx';
 
 function fileToDataUrl(file) {
@@ -175,6 +177,8 @@ export default function StylePanel() {
   const eff = effectiveStyle(perId, breakpoint);
   const v = (prop) => eff[prop] ?? '';
   const set = (prop, value) => useBuilder.getState().setStyle(selectedId, breakpoint, prop, value);
+  const setMany = (decls) => useBuilder.getState().setStyles(selectedId, breakpoint, decls);
+  const ctx = parentContext(project, selectedId, breakpoint);
   const overridden = (prop) => isSetAt(perId, breakpoint, prop);
 
   const display = v('display');
@@ -284,12 +288,7 @@ export default function StylePanel() {
           <FourSides label="Margin" prefix="margin" v={v} set={set} />
         </Section>
 
-        <Section title="Size">
-          <Field label="Width"><LengthField value={v('width')} onChange={(val) => set('width', val)} /></Field>
-          <Field label="Height"><LengthField value={v('height')} onChange={(val) => set('height', val)} /></Field>
-          <Field label="Max W"><LengthField value={v('max-width')} onChange={(val) => set('max-width', val)} /></Field>
-          <Field label="Min H"><LengthField value={v('min-height')} onChange={(val) => set('min-height', val)} /></Field>
-        </Section>
+        <SizeSection eff={eff} ctx={ctx} set={set} setMany={setMany} />
 
         <Section title="Typography">
           <Field label="Color"><ColorField value={v('color')} onChange={(val) => set('color', val)} /></Field>

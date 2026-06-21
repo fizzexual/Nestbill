@@ -157,6 +157,50 @@ export function Segmented({ value, onChange, options }) {
   );
 }
 
+/** Value + mode dropdown (the "240 ▸ Fixed" control). Value disabled for Fill/Fit. */
+export function ModeField({ mode, value, onMode, onValue, modes = ['Fill', 'Fit', 'Fixed', 'Relative'] }) {
+  const showValue = mode === 'Fixed' || mode === 'Relative';
+  return (
+    <div className="flex gap-1">
+      <input
+        type="number"
+        disabled={!showValue}
+        value={showValue ? (value ?? '') : ''}
+        placeholder={mode === 'Fill' ? 'Fill' : mode === 'Fit' ? 'Auto' : '0'}
+        onChange={(e) => onValue(e.target.value === '' ? '' : Number(e.target.value))}
+        className={`${inputCls} disabled:bg-neutral-50 disabled:text-neutral-300`}
+      />
+      <select
+        value={mode}
+        onChange={(e) => onMode(e.target.value)}
+        className="w-[5.5rem] shrink-0 rounded-md border border-neutral-200 bg-white px-1 py-1 text-xs text-neutral-600 outline-none focus:border-indigo-400"
+      >
+        {modes.map((m) => (
+          <option key={m} value={m}>{m}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+/** Range slider with a numeric readout. */
+export function Slider({ value, onChange, min = 0, max = 100, step = 1, suffix = '' }) {
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="h-1 flex-1 accent-indigo-600"
+      />
+      <span className="w-9 shrink-0 text-right text-[11px] tabular-nums text-neutral-500">{value}{suffix}</span>
+    </div>
+  );
+}
+
 export function ToggleField({ label, checked, onChange }) {
   return (
     <label className="flex cursor-pointer items-center justify-between gap-2">
