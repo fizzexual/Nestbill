@@ -1,10 +1,11 @@
-import { AlignLeft, AlignCenter, AlignRight, AlignJustify, ArrowRight, ArrowDown, Copy, Trash2 } from 'lucide-react';
+import { AlignLeft, AlignCenter, AlignRight, AlignJustify, Copy, Trash2 } from 'lucide-react';
 import { useBuilder, useUI } from './store.js';
 import { getActivePage } from './model.js';
-import { ICON_SET } from './components.jsx';
+import { ICON_SET, isContainer } from './components.jsx';
 import { effectiveStyle, isSetAt } from './styleUtils.js';
 import { parentContext } from './layout.js';
 import SizeSection from './panels/SizeSection.jsx';
+import LayoutSection from './panels/LayoutSection.jsx';
 import { Section, Field, LengthField, PxField, NumberField, SelectField, Segmented, ColorField, TextField, TextAreaField, ToggleField } from './controls.jsx';
 
 function fileToDataUrl(file) {
@@ -181,8 +182,6 @@ export default function StylePanel() {
   const ctx = parentContext(project, selectedId, breakpoint);
   const overridden = (prop) => isSetAt(perId, breakpoint, prop);
 
-  const display = v('display');
-  const isFlex = display === 'flex' || display === 'inline-flex';
   const position = v('position');
   const opacityPct = v('opacity') === '' ? 100 : Math.round(Number(v('opacity')) * 100);
 
@@ -255,33 +254,7 @@ export default function StylePanel() {
           </div>
         )}
         <ContentSection inst={inst} />
-        <Section title="Layout">
-          <Field label="Display">
-            <SelectField value={display} onChange={(val) => set('display', val)} options={['', 'block', 'flex', 'inline-flex', 'inline-block', 'grid', 'none']} />
-          </Field>
-          {isFlex && (
-            <>
-              <Field label="Direction">
-                <Segmented value={v('flex-direction')} onChange={(val) => set('flex-direction', val)} options={[
-                  { value: 'row', icon: ArrowRight, title: 'Row' },
-                  { value: 'column', icon: ArrowDown, title: 'Column' },
-                ]} />
-              </Field>
-              <Field label="Align">
-                <SelectField value={v('align-items')} onChange={(val) => set('align-items', val)} options={['', 'stretch', 'flex-start', 'center', 'flex-end', 'baseline']} />
-              </Field>
-              <Field label="Justify">
-                <SelectField value={v('justify-content')} onChange={(val) => set('justify-content', val)} options={['', 'flex-start', 'center', 'flex-end', 'space-between', 'space-around', 'space-evenly']} />
-              </Field>
-              <Field label="Wrap">
-                <SelectField value={v('flex-wrap')} onChange={(val) => set('flex-wrap', val)} options={['', 'nowrap', 'wrap']} />
-              </Field>
-            </>
-          )}
-          {(isFlex || display === 'grid') && (
-            <Field label="Gap"><LengthField value={v('gap')} onChange={(val) => set('gap', val)} /></Field>
-          )}
-        </Section>
+        {isContainer(inst.component) && <LayoutSection eff={eff} set={set} setMany={setMany} />}
 
         <Section title="Spacing">
           <FourSides label="Padding" prefix="padding" v={v} set={set} />

@@ -201,6 +201,30 @@ export function Slider({ value, onChange, min = 0, max = 100, step = 1, suffix =
   );
 }
 
+/** 3x3 alignment picker for a stack's children. value = { h, v } in start/center/end. */
+export function AlignGrid({ value, onChange }) {
+  const cells = ['start', 'center', 'end'];
+  return (
+    <div className="inline-grid grid-cols-3 gap-0.5 rounded-md bg-neutral-100 p-1">
+      {cells.map((v) =>
+        cells.map((h) => {
+          const active = value?.h === h && value?.v === v;
+          return (
+            <button
+              key={`${h}-${v}`}
+              type="button"
+              onClick={() => onChange({ h, v })}
+              className={`grid h-5 w-5 place-items-center rounded ${active ? 'bg-white shadow-sm' : 'hover:bg-neutral-200'}`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${active ? 'bg-indigo-600' : 'bg-neutral-400'}`} />
+            </button>
+          );
+        }),
+      )}
+    </div>
+  );
+}
+
 export function ToggleField({ label, checked, onChange }) {
   return (
     <label className="flex cursor-pointer items-center justify-between gap-2">

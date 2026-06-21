@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parentContext, axisSizeToCss, axisSizeMode, defaultForMode } from './layout.js';
+import { parentContext, axisSizeToCss, axisSizeMode, defaultForMode, stackAlignToCss, stackAlign } from './layout.js';
 
 const flexRow = { display: 'flex', direction: 'row' };
 const flexCol = { display: 'flex', direction: 'column' };
@@ -120,5 +120,26 @@ describe('defaultForMode', () => {
     expect(defaultForMode('Fixed', '')).toBe(100);
     expect(defaultForMode('Relative', 30)).toBe(30);
     expect(defaultForMode('Fill', 99)).toBe('');
+  });
+});
+
+describe('stack child alignment', () => {
+  it('row: h→justify, v→align', () => {
+    expect(stackAlignToCss('end', 'center', 'row')).toEqual({ 'justify-content': 'flex-end', 'align-items': 'center' });
+  });
+  it('column: v→justify, h→align (axes swap)', () => {
+    expect(stackAlignToCss('start', 'end', 'column')).toEqual({ 'justify-content': 'flex-end', 'align-items': 'flex-start' });
+  });
+  it('round-trips for row and column', () => {
+    for (const dir of ['row', 'column']) {
+      for (const h of ['start', 'center', 'end']) {
+        for (const v of ['start', 'center', 'end']) {
+          expect(stackAlign(stackAlignToCss(h, v, dir), dir)).toEqual({ h, v });
+        }
+      }
+    }
+  });
+  it('defaults to top-left when unset', () => {
+    expect(stackAlign({}, 'row')).toEqual({ h: 'start', v: 'start' });
   });
 });

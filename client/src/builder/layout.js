@@ -129,3 +129,30 @@ export function defaultForMode(mode, current) {
   if (mode === 'Relative') return current || 100;
   return '';
 }
+
+/* ---------- Stack child alignment (the 3x3 grid) ---------- */
+
+const J = { start: 'flex-start', center: 'center', end: 'flex-end' };
+const jinv = (v) => (v === 'center' ? 'center' : v === 'flex-end' || v === 'end' ? 'end' : 'start');
+const isColumn = (dir) => dir === 'column' || dir === 'column-reverse';
+
+/**
+ * Map a semantic {h, v} alignment (left/center/right × top/middle/bottom) to the
+ * stack's `justify-content` (main axis) and `align-items` (cross axis), which
+ * axis is which depending on direction.
+ */
+export function stackAlignToCss(h, v, direction = 'row') {
+  const col = isColumn(direction);
+  return {
+    'justify-content': col ? J[v] : J[h],
+    'align-items': col ? J[h] : J[v],
+  };
+}
+
+/** Inverse of stackAlignToCss: read {h, v} from effective CSS. */
+export function stackAlign(eff = {}, direction = 'row') {
+  const col = isColumn(direction);
+  const j = jinv(eff['justify-content']);
+  const a = jinv(eff['align-items']);
+  return col ? { h: a, v: j } : { h: j, v: a };
+}
