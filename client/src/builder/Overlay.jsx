@@ -143,6 +143,7 @@ export default function Overlay({ iframeRef, scale = 1 }) {
                   borderRadius: 2,
                   cursor: hd.cur,
                   zIndex: 51,
+                  pointerEvents: 'auto',
                 }}
               />
             ))}
