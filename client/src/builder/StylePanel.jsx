@@ -7,6 +7,7 @@ import { parentContext } from './layout.js';
 import SizeSection from './panels/SizeSection.jsx';
 import LayoutSection from './panels/LayoutSection.jsx';
 import PositionSection from './panels/PositionSection.jsx';
+import TransformSection from './panels/TransformSection.jsx';
 import { Section, Field, LengthField, PxField, SelectField, Segmented, ColorField, TextField, TextAreaField, ToggleField } from './controls.jsx';
 
 function fileToDataUrl(file) {
@@ -245,6 +246,8 @@ export default function StylePanel() {
           <Field label="Style"><SelectField value={v('border-style')} onChange={(val) => set('border-style', val)} options={['', 'none', 'solid', 'dashed', 'dotted']} /></Field>
           <Field label="Color"><ColorField value={v('border-color')} onChange={(val) => set('border-color', val)} /></Field>
         </Section>
+
+        <TransformSection eff={eff} set={set} />
 
         <Section title="Effects" defaultOpen={false}>
           <Field label="Opacity">
