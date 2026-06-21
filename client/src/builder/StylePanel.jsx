@@ -2,7 +2,7 @@ import { AlignLeft, AlignCenter, AlignRight, AlignJustify, Copy, Trash2 } from '
 import { useBuilder, useUI } from './store.js';
 import { getActivePage } from './model.js';
 import { ICON_SET, isContainer } from './components.jsx';
-import { effectiveStyle, isSetAt } from './styleUtils.js';
+import { effectiveStyle } from './styleUtils.js';
 import { parentContext } from './layout.js';
 import SizeSection from './panels/SizeSection.jsx';
 import LayoutSection from './panels/LayoutSection.jsx';
@@ -179,7 +179,6 @@ export default function StylePanel() {
   const set = (prop, value) => useBuilder.getState().setStyle(selectedId, breakpoint, prop, value);
   const setMany = (decls) => useBuilder.getState().setStyles(selectedId, breakpoint, decls);
   const ctx = parentContext(project, selectedId, breakpoint);
-  const overridden = (prop) => isSetAt(perId, breakpoint, prop);
 
   const rootId = getActivePage(project, activePageId).rootId;
   const isRoot = selectedId === rootId;
