@@ -156,3 +156,32 @@ export function stackAlign(eff = {}, direction = 'row') {
   const a = jinv(eff['align-items']);
   return col ? { h: a, v: j } : { h: j, v: a };
 }
+
+/**
+ * Align the SELECTED element within its parent (the top toolbar). Cross-axis uses
+ * align-self; main-axis uses auto margins (the only way to align a single flex
+ * child along the main axis). dimension: 'horizontal' | 'vertical'; pos: start|center|end.
+ */
+export function alignDecls(ctx, dimension, pos) {
+  if (isGridDisplay(ctx.display)) {
+    const prop = dimension === 'horizontal' ? 'justify-self' : 'align-self';
+    return { [prop]: pos === 'start' ? 'start' : pos === 'end' ? 'end' : 'center' };
+  }
+  const flex = isFlexDisplay(ctx.display);
+  const col = isColumn(ctx.direction);
+  const isMain = flex && (dimension === 'horizontal' ? !col : col);
+  if (flex && !isMain) {
+    return { 'align-self': pos === 'start' ? 'flex-start' : pos === 'end' ? 'flex-end' : 'center' };
+  }
+  if (dimension === 'horizontal') {
+    if (pos === 'center') return { 'margin-left': 'auto', 'margin-right': 'auto' };
+    if (pos === 'end') return { 'margin-left': 'auto', 'margin-right': '' };
+    return { 'margin-left': '', 'margin-right': '' };
+  }
+  if (flex) {
+    if (pos === 'center') return { 'margin-top': 'auto', 'margin-bottom': 'auto' };
+    if (pos === 'end') return { 'margin-top': 'auto', 'margin-bottom': '' };
+    return { 'margin-top': '', 'margin-bottom': '' };
+  }
+  return {};
+}

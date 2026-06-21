@@ -10,6 +10,7 @@ import PositionSection from './panels/PositionSection.jsx';
 import TransformSection from './panels/TransformSection.jsx';
 import AppearanceSection from './panels/AppearanceSection.jsx';
 import FiltersSection from './panels/FiltersSection.jsx';
+import AlignToolbar from './panels/AlignToolbar.jsx';
 import { Section, Field, LengthField, PxField, SelectField, Segmented, ColorField, TextField, TextAreaField, ToggleField } from './controls.jsx';
 
 function fileToDataUrl(file) {
@@ -207,6 +208,7 @@ export default function StylePanel() {
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto scroll-thin">
+        {!isRoot && <AlignToolbar ctx={ctx} setMany={setMany} />}
         <ContentSection inst={inst} />
         {isContainer(inst.component) && <LayoutSection eff={eff} set={set} setMany={setMany} />}
 

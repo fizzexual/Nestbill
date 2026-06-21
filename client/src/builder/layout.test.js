@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parentContext, axisSizeToCss, axisSizeMode, defaultForMode, stackAlignToCss, stackAlign } from './layout.js';
+import { parentContext, axisSizeToCss, axisSizeMode, defaultForMode, stackAlignToCss, stackAlign, alignDecls } from './layout.js';
 
 const flexRow = { display: 'flex', direction: 'row' };
 const flexCol = { display: 'flex', direction: 'column' };
@@ -141,5 +141,29 @@ describe('stack child alignment', () => {
   });
   it('defaults to top-left when unset', () => {
     expect(stackAlign({}, 'row')).toEqual({ h: 'start', v: 'start' });
+  });
+});
+
+describe('alignDecls — align selected element within parent', () => {
+  it('flex row: vertical is the cross axis → align-self', () => {
+    expect(alignDecls(flexRow, 'vertical', 'center')).toEqual({ 'align-self': 'center' });
+    expect(alignDecls(flexRow, 'vertical', 'end')).toEqual({ 'align-self': 'flex-end' });
+  });
+  it('flex row: horizontal is the main axis → auto margins', () => {
+    expect(alignDecls(flexRow, 'horizontal', 'center')).toEqual({ 'margin-left': 'auto', 'margin-right': 'auto' });
+    expect(alignDecls(flexRow, 'horizontal', 'end')).toEqual({ 'margin-left': 'auto', 'margin-right': '' });
+    expect(alignDecls(flexRow, 'horizontal', 'start')).toEqual({ 'margin-left': '', 'margin-right': '' });
+  });
+  it('flex column: axes swap', () => {
+    expect(alignDecls(flexCol, 'horizontal', 'center')).toEqual({ 'align-self': 'center' });
+    expect(alignDecls(flexCol, 'vertical', 'center')).toEqual({ 'margin-top': 'auto', 'margin-bottom': 'auto' });
+  });
+  it('grid uses justify-self / align-self', () => {
+    expect(alignDecls(grid, 'horizontal', 'start')).toEqual({ 'justify-self': 'start' });
+    expect(alignDecls(grid, 'vertical', 'end')).toEqual({ 'align-self': 'end' });
+  });
+  it('block: horizontal via auto margins, vertical is a no-op', () => {
+    expect(alignDecls(block, 'horizontal', 'center')).toEqual({ 'margin-left': 'auto', 'margin-right': 'auto' });
+    expect(alignDecls(block, 'vertical', 'center')).toEqual({});
   });
 });
