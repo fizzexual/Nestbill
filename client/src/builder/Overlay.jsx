@@ -13,7 +13,7 @@ const HANDLES = [
   { k: 'se', hx: 1, hy: 1, cur: 'nwse-resize' },
 ];
 
-export default function Overlay({ iframeRef }) {
+export default function Overlay({ iframeRef, scale = 1 }) {
   const selectedId = useUI((s) => s.selectedId);
   const hoveredId = useUI((s) => s.hoveredId);
   const breakpoint = useUI((s) => s.breakpoint);
@@ -52,14 +52,16 @@ export default function Overlay({ iframeRef }) {
     if (!node) return null;
     const r = node.getBoundingClientRect();
     const f = iframe.getBoundingClientRect();
-    return { left: f.left + r.left, top: f.top + r.top, width: r.width, height: r.height };
+    // r is iframe-internal (unscaled); f is the on-screen (scaled) iframe rect.
+    return { left: f.left + r.left * scale, top: f.top + r.top * scale, width: r.width * scale, height: r.height * scale };
   };
 
   const onResizeMove = (e) => {
     const r = resizing.current;
     if (!r) return;
-    const dx = e.clientX - r.sx;
-    const dy = e.clientY - r.sy;
+    // pointer deltas are screen px; convert to iframe px by dividing by the canvas scale.
+    const dx = (e.clientX - r.sx) / scale;
+    const dy = (e.clientY - r.sy) / scale;
     let { left, top, w, h } = r;
     if (r.hx === 1) w = Math.max(8, r.w + dx);
     if (r.hx === -1) { w = Math.max(8, r.w - dx); left = r.left + (r.w - w); }

@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { Hand, Minus, Plus, Maximize } from 'lucide-react';
 import { useBuilder, useUI } from './store.js';
 import { BREAKPOINTS, generateCss } from './cssGen.js';
 import { COMPONENTS } from './components.jsx';
@@ -13,6 +14,7 @@ const RESET = `*,*::before,*::after{box-sizing:border-box}html,body{margin:0;pad
 const EDIT_HELPERS = `[data-ws-id]:empty{min-height:48px;min-width:48px;outline:1px dashed #cbd5e1;outline-offset:-1px} canvas{pointer-events:none}`;
 
 const DRAG_TYPE = 'text/prism-component';
+const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 
 /** Decide where a dragged component should land. Coords are iframe-viewport relative. */
 function computeDrop(e, doc, instances, rootId, excludeId) {
@@ -79,12 +81,34 @@ export default function Canvas() {
   const previewMode = useUI((s) => s.previewMode);
   const activePageId = useUI((s) => s.activePageId);
 
+  const surfaceRef = useRef(null);
   const iframeRef = useRef(null);
   const wsStyleRef = useRef(null);
   const [mountNode, setMountNode] = useState(null);
   const [dropLine, setDropLine] = useState(null);
   const [guides, setGuides] = useState([]);
   const editingRef = useRef(null);
+
+  // Infinite-canvas view (pan/zoom) + pan tooling.
+  const [view, setView] = useState({ z: 1, panX: 0, panY: 0 });
+  const [tool, setTool] = useState('select'); // 'select' | 'hand'
+  const [spaceDown, setSpaceDown] = useState(false);
+  const [grabbing, setGrabbing] = useState(false);
+  const panActive = !previewMode && (tool === 'hand' || spaceDown);
+
+  const page = getActivePage(project, activePageId);
+  const width = BREAKPOINTS[breakpoint]?.width || 1280;
+
+  const fit = useCallback(() => {
+    const s = surfaceRef.current?.getBoundingClientRect();
+    if (!s) return;
+    const margin = 56;
+    const z = clamp((s.width - margin * 2) / width, 0.1, 1);
+    setView({ z, panX: (s.width - width * z) / 2, panY: margin });
+  }, [width]);
+
+  // Center/fit the frame once the surface is measured.
+  useEffect(() => { fit(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
   useEffect(() => {
     const iframe = iframeRef.current;
@@ -108,6 +132,76 @@ export default function Canvas() {
     if (editEl) editEl.textContent = previewMode ? '' : EDIT_HELPERS;
   }, [previewMode, mountNode]);
 
+  // Size the iframe to its content so the whole page is visible on the canvas.
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    const doc = iframe?.contentDocument;
+    if (!doc) return undefined;
+    const update = () => { const h = doc.body?.scrollHeight || 0; iframe.style.height = `${Math.max(h, 400)}px`; };
+    const ro = new ResizeObserver(update);
+    if (doc.body) ro.observe(doc.body);
+    const t = setInterval(update, 250);
+    update();
+    return () => { ro.disconnect(); clearInterval(t); };
+  }, [mountNode]);
+
+  // Zoom (ctrl/⌘+wheel, toward cursor) and pan (wheel/trackpad) on the surface.
+  useEffect(() => {
+    const surf = surfaceRef.current;
+    if (!surf) return undefined;
+    const onWheel = (e) => {
+      e.preventDefault();
+      if (e.ctrlKey || e.metaKey) {
+        const r = surf.getBoundingClientRect();
+        const cx = e.clientX - r.left;
+        const cy = e.clientY - r.top;
+        setView((v) => {
+          const z2 = clamp(v.z * Math.exp(-e.deltaY * 0.0015), 0.1, 3);
+          const wx = (cx - v.panX) / v.z;
+          const wy = (cy - v.panY) / v.z;
+          return { z: z2, panX: cx - wx * z2, panY: cy - wy * z2 };
+        });
+      } else {
+        setView((v) => ({ ...v, panX: v.panX - e.deltaX, panY: v.panY - e.deltaY }));
+      }
+    };
+    surf.addEventListener('wheel', onWheel, { passive: false });
+    return () => surf.removeEventListener('wheel', onWheel);
+  }, []);
+
+  // Hold Space to pan (ignored while typing in the editor chrome).
+  useEffect(() => {
+    const editingField = (t) => t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+    const down = (e) => { if (e.code === 'Space' && !editingField(e.target) && !editingRef.current) { setSpaceDown(true); } };
+    const up = (e) => { if (e.code === 'Space') setSpaceDown(false); };
+    window.addEventListener('keydown', down);
+    window.addEventListener('keyup', up);
+    return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); };
+  }, []);
+
+  const zoomBy = (factor) => {
+    const r = surfaceRef.current?.getBoundingClientRect();
+    if (!r) return;
+    const cx = r.width / 2;
+    const cy = r.height / 2;
+    setView((v) => {
+      const z2 = clamp(v.z * factor, 0.1, 3);
+      const wx = (cx - v.panX) / v.z;
+      const wy = (cy - v.panY) / v.z;
+      return { z: z2, panX: cx - wx * z2, panY: cy - wy * z2 };
+    });
+  };
+
+  const startPan = (e) => {
+    e.preventDefault();
+    const start = { x: e.clientX, y: e.clientY, panX: view.panX, panY: view.panY };
+    setGrabbing(true);
+    const move = (ev) => setView((v) => ({ ...v, panX: start.panX + (ev.clientX - start.x), panY: start.panY + (ev.clientY - start.y) }));
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); setGrabbing(false); };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
   // select + drag-to-move (free positioning)
   useEffect(() => {
     const doc = iframeRef.current?.contentDocument;
@@ -129,7 +223,6 @@ export default function Canvas() {
       return pos === 'absolute' || pos === 'fixed';
     };
     const onDown = (e) => {
-      // While editing text inline, let clicks inside the editing element place the caret.
       if (editingRef.current && editingRef.current.el.contains(e.target)) return;
       const el = e.target.closest?.('[data-ws-id]');
       const id = idOf(el);
@@ -137,12 +230,10 @@ export default function Canvas() {
       useUI.getState().select(id);
       if (id === rootId()) return;
       if (isFree(id)) {
-        // Free element: drag to reposition (absolute left/top).
         const er = el.getBoundingClientRect();
         const rr = doc.querySelector(`[data-ws-id="${rootId()}"]`).getBoundingClientRect();
         drag = { type: 'move', id, el, sx: e.clientX, sy: e.clientY, left: Math.round(er.left - rr.left), top: Math.round(er.top - rr.top), w: Math.round(er.width), h: Math.round(er.height), moved: false };
       } else {
-        // Flow element: drag to reorder in the layout.
         drag = { type: 'reorder', id, el, sx: e.clientX, sy: e.clientY, moved: false, drop: null };
       }
       try { el.setPointerCapture(e.pointerId); } catch { /* ignore */ }
@@ -164,8 +255,8 @@ export default function Canvas() {
         drag.el.style.left = `${Math.round(snapped.left)}px`;
         drag.el.style.top = `${Math.round(snapped.top)}px`;
         const gs = [];
-        if (snapped.guideX != null) gs.push({ axis: 'x', pos: rr.left + snapped.guideX });
-        if (snapped.guideY != null) gs.push({ axis: 'y', pos: rr.top + snapped.guideY });
+        if (snapped.guideX != null) gs.push({ axis: 'x', pos: snapped.guideX });
+        if (snapped.guideY != null) gs.push({ axis: 'y', pos: snapped.guideY });
         setGuides(gs);
       } else {
         drag.el.style.opacity = '0.4';
@@ -198,7 +289,7 @@ export default function Canvas() {
       setGuides([]);
       drag = null;
     };
-    const onClick = (e) => e.preventDefault(); // block link/button navigation in edit mode
+    const onClick = (e) => e.preventDefault();
     const onLeave = () => useUI.getState().hover(null);
     const onContextMenu = (e) => {
       const el = e.target.closest?.('[data-ws-id]');
@@ -207,7 +298,7 @@ export default function Canvas() {
       e.preventDefault();
       useUI.getState().select(id);
       const f = iframeRef.current.getBoundingClientRect();
-      useUI.getState().setMenu({ x: f.left + e.clientX, y: f.top + e.clientY, id });
+      useUI.getState().setMenu({ x: f.left + e.clientX * view.z, y: f.top + e.clientY * view.z, id });
     };
     const onKey = (e) => { if (!editingRef.current) handleShortcut(e); };
 
@@ -227,7 +318,7 @@ export default function Canvas() {
       doc.removeEventListener('contextmenu', onContextMenu);
       doc.removeEventListener('keydown', onKey);
     };
-  }, [mountNode, previewMode]);
+  }, [mountNode, previewMode, view.z]);
 
   // drag-to-insert
   useEffect(() => {
@@ -299,44 +390,67 @@ export default function Canvas() {
     };
   }, [mountNode, previewMode]);
 
-  const page = getActivePage(project, activePageId);
-  const width = BREAKPOINTS[breakpoint]?.width || 1280;
-  const iframe = iframeRef.current;
-  const fr = iframe?.getBoundingClientRect();
+  const { z, panX, panY } = view;
 
   return (
-    <div className="relative flex-1 overflow-auto bg-neutral-100 [background-image:radial-gradient(#d6d8de_1px,transparent_1px)] [background-size:18px_18px]">
-      <div className="flex min-h-full justify-center p-8">
-        <div
-          className="flex shrink-0 flex-col overflow-hidden rounded-xl bg-white shadow-[0_2px_8px_rgba(0,0,0,.06),0_20px_48px_rgba(0,0,0,.12)] ring-1 ring-black/5"
-          style={{ width }}
-          onClick={() => useUI.getState().select(null)}
-        >
+    <div
+      ref={surfaceRef}
+      className="relative flex-1 overflow-hidden bg-neutral-100 [background-image:radial-gradient(#d6d8de_1px,transparent_1px)] [background-size:18px_18px]"
+      style={{ touchAction: 'none' }}
+      onPointerDown={(e) => { if (e.target === surfaceRef.current) useUI.getState().select(null); }}
+    >
+      <div
+        className="absolute left-0 top-0 origin-top-left"
+        style={{ transform: `translate(${panX}px, ${panY}px) scale(${z})` }}
+      >
+        <div className="flex shrink-0 flex-col overflow-hidden rounded-xl bg-white shadow-[0_2px_8px_rgba(0,0,0,.06),0_20px_48px_rgba(0,0,0,.12)] ring-1 ring-black/5" style={{ width }}>
           <div className="flex h-9 shrink-0 items-center gap-1.5 border-b border-neutral-100 bg-neutral-50 px-3">
             <span className="h-2.5 w-2.5 rounded-full bg-red-400/60" />
             <span className="h-2.5 w-2.5 rounded-full bg-amber-400/60" />
             <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/60" />
             <div className="mx-auto flex items-center gap-1.5 rounded-md bg-white px-3 py-0.5 text-[10px] text-neutral-400 ring-1 ring-neutral-200">
-              {page?.name || 'Page'} · {width}px
+              {page?.name || 'Page'} · {BREAKPOINTS[breakpoint]?.label} · {width}px
             </div>
           </div>
           {/* eslint-disable-next-line jsx-a11y/iframe-has-title */}
-          <iframe ref={iframeRef} title="Canvas" className="block w-full flex-1 border-0" style={{ minHeight: 'calc(100vh - 150px)' }} onClick={(e) => e.stopPropagation()} />
+          <iframe ref={iframeRef} title="Canvas" className="block w-full border-0" style={{ minHeight: 400 }} />
         </div>
       </div>
-      {mountNode && project && page && createPortal(<InstanceRender id={page.rootId} instances={project.instances} />, mountNode)}
-      {!previewMode && <Overlay iframeRef={iframeRef} />}
-      {!previewMode && dropLine && fr && (
-        <div
-          style={{ position: 'fixed', left: fr.left + dropLine.left, top: fr.top + dropLine.top - 1, width: dropLine.width, height: 2, background: '#4f46e5', borderRadius: 2, zIndex: 60, pointerEvents: 'none' }}
-        />
+
+      {/* Pan capture layer: intercepts drags for panning when the Hand tool or Space is active. */}
+      {panActive && (
+        <div className="absolute inset-0 z-30" style={{ cursor: grabbing ? 'grabbing' : 'grab' }} onPointerDown={startPan} />
       )}
-      {!previewMode && fr && guides.map((g, i) =>
-        g.axis === 'x' ? (
-          <div key={i} style={{ position: 'fixed', left: fr.left + g.pos, top: fr.top, width: 1, height: fr.height, background: '#ec4899', zIndex: 61, pointerEvents: 'none' }} />
+
+      {mountNode && project && page && createPortal(<InstanceRender id={page.rootId} instances={project.instances} />, mountNode)}
+      {!previewMode && <Overlay iframeRef={iframeRef} scale={z} />}
+      {!previewMode && dropLine && iframeRef.current && (() => {
+        const fr = iframeRef.current.getBoundingClientRect();
+        return (
+          <div style={{ position: 'fixed', left: fr.left + dropLine.left * z, top: fr.top + (dropLine.top - 1) * z, width: dropLine.width * z, height: 2 * z, background: '#4f46e5', borderRadius: 2, zIndex: 60, pointerEvents: 'none' }} />
+        );
+      })()}
+      {!previewMode && iframeRef.current && guides.map((g, i) => {
+        const fr = iframeRef.current.getBoundingClientRect();
+        return g.axis === 'x' ? (
+          <div key={i} style={{ position: 'fixed', left: fr.left + g.pos * z, top: fr.top, width: 1, height: fr.height, background: '#ec4899', zIndex: 61, pointerEvents: 'none' }} />
         ) : (
-          <div key={i} style={{ position: 'fixed', left: fr.left, top: fr.top + g.pos, height: 1, width: fr.width, background: '#ec4899', zIndex: 61, pointerEvents: 'none' }} />
-        ),
+          <div key={i} style={{ position: 'fixed', left: fr.left, top: fr.top + g.pos * z, height: 1, width: fr.width, background: '#ec4899', zIndex: 61, pointerEvents: 'none' }} />
+        );
+      })}
+
+      {/* Zoom / pan control */}
+      {!previewMode && (
+        <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-xl bg-white/95 px-2 py-1 shadow-lg ring-1 ring-black/10 backdrop-blur">
+          <button onClick={() => setTool((t) => (t === 'hand' ? 'select' : 'hand'))} title="Hand tool (or hold Space)" className={`grid h-7 w-7 place-items-center rounded-md ${tool === 'hand' ? 'bg-indigo-600 text-white' : 'text-neutral-600 hover:bg-neutral-100'}`}>
+            <Hand size={15} />
+          </button>
+          <div className="mx-0.5 h-4 w-px bg-neutral-200" />
+          <button onClick={() => zoomBy(1 / 1.2)} title="Zoom out" className="grid h-7 w-7 place-items-center rounded-md text-neutral-600 hover:bg-neutral-100"><Minus size={15} /></button>
+          <button onClick={() => zoomBy(1.2)} title="Zoom in" className="grid h-7 w-7 place-items-center rounded-md text-neutral-600 hover:bg-neutral-100"><Plus size={15} /></button>
+          <button onClick={fit} className="w-12 rounded-md py-1 text-center text-xs tabular-nums text-neutral-600 hover:bg-neutral-100" title="Fit to screen">{Math.round(z * 100)}%</button>
+          <button onClick={fit} title="Fit to screen" className="grid h-7 w-7 place-items-center rounded-md text-neutral-600 hover:bg-neutral-100"><Maximize size={14} /></button>
+        </div>
       )}
     </div>
   );
