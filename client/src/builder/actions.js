@@ -124,6 +124,24 @@ export function setPositionType(id, type) {
   makeFlow(target);
 }
 
+/**
+ * Show/hide an element via `display:none`, preserving its prior display value in
+ * a private prop so toggling back doesn't lose a container's flex/grid layout.
+ */
+export function setVisible(id, visible) {
+  const target = id || useUI.getState().selectedId;
+  if (!target) return;
+  const b = bp();
+  if (!visible) {
+    const cur = effectiveStyle(project().styles[target] || {}, b).display || '';
+    if (cur !== 'none') useBuilder.getState().setProp(target, '_display', cur);
+    useBuilder.getState().setStyle(target, b, 'display', 'none');
+  } else {
+    const prev = project().instances[target].props._display || '';
+    useBuilder.getState().setStyle(target, b, 'display', prev);
+  }
+}
+
 const ARROWS = { arrowleft: [-1, 0], arrowright: [1, 0], arrowup: [0, -1], arrowdown: [0, 1] };
 
 /** Handle an editor keyboard shortcut. Returns true if handled. */

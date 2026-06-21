@@ -8,6 +8,7 @@ import SizeSection from './panels/SizeSection.jsx';
 import LayoutSection from './panels/LayoutSection.jsx';
 import PositionSection from './panels/PositionSection.jsx';
 import TransformSection from './panels/TransformSection.jsx';
+import AppearanceSection from './panels/AppearanceSection.jsx';
 import { Section, Field, LengthField, PxField, SelectField, Segmented, ColorField, TextField, TextAreaField, ToggleField } from './controls.jsx';
 
 function fileToDataUrl(file) {
@@ -101,12 +102,6 @@ const FONT_FAMILIES = [
   { value: 'ui-monospace, Menlo, Consolas, monospace', label: 'Mono' },
 ];
 const WEIGHTS = ['', '300', '400', '500', '600', '700', '800'];
-const SHADOWS = [
-  { value: '', label: 'None' },
-  { value: '0 1px 2px rgba(0,0,0,0.10)', label: 'Small' },
-  { value: '0 6px 18px rgba(0,0,0,0.15)', label: 'Medium' },
-  { value: '0 16px 40px rgba(0,0,0,0.22)', label: 'Large' },
-];
 
 function FourSides({ label, prefix, v, set }) {
   const sides = ['top', 'right', 'bottom', 'left'];
@@ -184,8 +179,6 @@ export default function StylePanel() {
   const ctx = parentContext(project, selectedId, breakpoint);
   const overridden = (prop) => isSetAt(perId, breakpoint, prop);
 
-  const opacityPct = v('opacity') === '' ? 100 : Math.round(Number(v('opacity')) * 100);
-
   const rootId = getActivePage(project, activePageId).rootId;
   const isRoot = selectedId === rootId;
 
@@ -249,14 +242,7 @@ export default function StylePanel() {
 
         <TransformSection eff={eff} set={set} />
 
-        <Section title="Effects" defaultOpen={false}>
-          <Field label="Opacity">
-            <input type="range" min="0" max="100" step="5" value={opacityPct}
-              onChange={(e) => set('opacity', Number(e.target.value) === 100 ? '' : String(Number(e.target.value) / 100))}
-              className="w-full" />
-          </Field>
-          <Field label="Shadow"><SelectField value={v('box-shadow')} onChange={(val) => set('box-shadow', val)} options={SHADOWS} /></Field>
-        </Section>
+        <AppearanceSection id={selectedId} eff={eff} set={set} />
 
         {!isRoot && <PositionSection id={selectedId} eff={eff} set={set} />}
       </div>
